@@ -179,8 +179,14 @@ Section product.
   Proof.
     apply/andP; split.
     { rewrite /prod_pmf sum_ffunE'.
-      (*rewrite bigA_distr_bigA.*)
-  Admitted. (*TODO*)
+      rewrite -(@prod_distr_sum _ _ rty (fun x y => f x y)).
+      have H: \prod_(i<n) (\sum_j (f i) j) = \prod_(i<n) 1.
+      { apply: congr_big => // i _.
+        by rewrite dist_normalized. }
+      by rewrite H prodr_const expr1n. }
+    apply/forallP => x; rewrite /prod_pmf ffunE.
+    by apply: prodr_ge0 => i _; apply: dist_positive.
+  Qed.    
   
   Definition prod_dist : dist [finType of type] rty :=
     @mkDist _ _ prod_pmf prod_pmf_dist.
