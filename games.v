@@ -233,7 +233,7 @@ Section gameDefs.
     rewrite {2}H3 mulf_div GRing.mulr1 -GRing.mulrA GRing.divff=> //.
     by rewrite GRing.mulr1.
   Qed.
-
+  
   (** The expected cost (to player [i]) of a particular distribution
       over configurations.  Note that the distribution [d] need not
       be a product distribution -- in order to define Coarse
@@ -254,12 +254,12 @@ Section gameDefs.
     rewrite /ExpectedCost /expectedCost /expectedValue.
     by rewrite -exchange_big=> /=; apply/congr_big=> //= i _; rewrite mulr_sumr.
   Qed.
-
+  
   Definition upd (i : 'I_N) :=
     [fun t t' : (T ^ N)%type =>
        finfun (fun j => if i == j then t' j else t j)].
   
-  (** The expected cost of an i-unilateral deviation to strategy [t'] *)
+  (** The expected cost of an i-unilateral deviation to strategy [t' i] *)
   Definition expectedUnilateralCost
              (i : 'I_N)
              (d : dist [finType of state N T] rty)
@@ -275,28 +275,61 @@ Section gameDefs.
     by rewrite -exchange_big=> /=; apply/congr_big=> //= i _; rewrite mulr_sumr.
   Qed.
 
-  (** \epsilon-Approximate Coarse Correlated Equilibria
-      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      The expected cost of a unilateral deviation to state (t' i) is greater
-      or equal to (1 + \epsilon) times the expected cost of distribution [d].
+  (** The expected cost of an i-unilateral deviation to strategy [t' i], 
+      conditioned on current i-strategy equal [t_i]. *)
+  Definition expectedUnilateralCondCost
+             (i : 'I_N)
+             (d : dist [finType of state N T] rty)
+             (t_i : T)
+             (t' : state N T) :=
+    expectedCondValue
+      d
+      (fun t : state N T => cost i (upd i t t'))
+      [pred tx : state N T | tx i == t_i].
+  
+  (** \epsilon-Approximate Correlated Equilibria
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      The expected cost of a unilateral deviation to state (t' i), 
+      conditioned on current strategy (t i), is no greater than 
+       \epsilon plus the expected cost of distribution [d].
 
       NOTES: 
-      - [t'] must be a valid move for [i] from any state in the 
-        support of [d].
+      - [t' i] must be a valid move for [i] from [t i].
+   *)
+  Definition eCE (epsilon : rty) (d : dist [finType of state N T] rty) : Prop :=
+    forall (i : 'I_N) (t_i : T) (t' : state N T),
+      (forall t : state N T, t i = t_i -> Move i t (upd i t t')) -> 
+      expectedCost i d <= expectedUnilateralCondCost i d t_i t' + epsilon.
+  
+  (** \epsilon-Approximate Coarse Correlated Equilibria
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      The expected cost of a unilateral deviation to state (t' i) is no greater
+       \epsilon plus the expected cost of distribution [d].
 
-      - For this definition to make sense in context, the cost function 
-        for game [T] should be normalized to range [0,1].
+      NOTES: 
+      - [t' i] must be a valid move for [i] from any state in the 
+        support of [d].
    *)
   Definition eCCE (epsilon : rty) (d : dist [finType of state N T] rty) : Prop :=
     forall (i : 'I_N) (t' : state N T),
       (forall t : state N T, t \in support d -> Move i t (upd i t t')) -> 
-      expectedCost i d <= (1 + epsilon) * expectedUnilateralCost i d t'.
+      expectedCost i d <= expectedUnilateralCost i d t' + epsilon.
 
+  Lemma eCE_eCCE epsilon d : eCE epsilon d -> eCCE epsilon d.
+  Proof.
+    move => Hx i t' H2.
+    rewrite /eCE in Hx.
+    move: (Hx i).
+    rewrite /expectedUnilateralCost /expectedUnilateralCondCost
+            /expectedCost /expectedValue /expectedCondValue.
+    simpl.
+    move/(_ (t' i) t').
+  
   Definition eCCEb (epsilon : rty) (d : dist [finType of state N T] rty) : bool :=
     [forall i : 'I_N,
        [forall t' : state N T,
           [forall t : state N T, (t \in support d) ==> Move i t (upd i t t')]
-      ==> (expectedCost i d <= (1 + epsilon) * expectedUnilateralCost i d t')]].
+      ==> (expectedCost i d <= expectedUnilateralCost i d t' + epsilon)]].
 
   Lemma eCCE_eCCEb eps d : eCCE eps d <-> eCCEb eps d.
   Proof.
@@ -332,7 +365,7 @@ Section gameDefs.
     expectedCost i d <= expectedUnilateralCost i d t'.
   Proof.
     rewrite /CCE /eCCE in H1 => i t' H2.
-    by move: (H1 i t' H2); rewrite addr0 mul1r.
+    by move: (H1 i t' H2); rewrite addr0.
   Qed.    
 
   Definition CCEb (d : dist [finType of state N T] rty) : bool := eCCEb 0 d.
