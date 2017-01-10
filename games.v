@@ -298,7 +298,7 @@ Section gameDefs.
    *)
   Definition eCE (epsilon : rty) (d : dist [finType of state N T] rty) : Prop :=
     forall (i : 'I_N) (t_i : T) (t' : state N T),
-      (forall t : state N T, t i = t_i -> Move i t (upd i t t')) -> 
+      (forall t : state N T, t i = t_i -> t \in support d -> Move i t (upd i t t')) -> 
       expectedCost i d <= expectedUnilateralCondCost i d t_i t' + epsilon.
   
   (** \epsilon-Approximate Coarse Correlated Equilibria
@@ -315,15 +315,44 @@ Section gameDefs.
       (forall t : state N T, t \in support d -> Move i t (upd i t t')) -> 
       expectedCost i d <= expectedUnilateralCost i d t' + epsilon.
 
+  Lemma ler_psum
+     : forall (R : numDomainType) (I : Type) (r : seq I) 
+              (P Q : pred I) (F : I -> R),
+       (forall i, 0 <= F i) ->  
+       (forall i : I, P i -> Q i) ->
+       \sum_(i <- r | P i) F i <= \sum_(i <- r | Q i) F i.
+  Proof.
+    move => R I r P Q F Hpos Hx; elim: r; first by rewrite !big_nil.
+    move => a l IH; rewrite !big_cons.
+    case Hp: (P a).
+    { rewrite (Hx _ Hp); apply: ler_add => //. }
+    case Hq: (Q a) => //.
+    rewrite -[\sum_(j <- l | P j) F j]addr0 addrC; apply ler_add => //.
+  Qed.    
+    
+  Lemma ler_psum_simpl
+     : forall (R : numDomainType) (I : Type) (r : seq I) 
+              (P : pred I) (F : I -> R),
+       (forall i, 0 <= F i) ->        
+       \sum_(i <- r | P i) F i <= \sum_(i <- r) F i.
+  Proof.
+    move => R I r P F Hpos. 
+    have ->: \sum_(i <- r) F i = \sum_(i <- r | predT i) F i.
+    { apply: congr_big => //. }
+    apply ler_psum => //.
+  Qed.
+  
   Lemma eCE_eCCE epsilon d : eCE epsilon d -> eCCE epsilon d.
   Proof.
-    move => Hx i t' H2.
-    rewrite /eCE in Hx.
-    move: (Hx i).
+    move => Hx i t' H2; rewrite /eCE in Hx; move: (Hx i).
     rewrite /expectedUnilateralCost /expectedUnilateralCondCost
             /expectedCost /expectedValue /expectedCondValue.
-    simpl.
-    move/(_ (t' i) t').
+    move/(_ (t' i) t') => Hy; apply: ler_trans.
+    { apply: Hy; move => t'' Heq Hsup; apply: H2 => //. }
+    apply: ler_add => //; apply: ler_psum_simpl.
+    move => ix; apply: mulr_ge0 => //.
+    apply: dist_positive.
+  Qed.
   
   Definition eCCEb (epsilon : rty) (d : dist [finType of state N T] rty) : bool :=
     [forall i : 'I_N,
