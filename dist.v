@@ -49,6 +49,12 @@ Section support.
 
   Lemma in_support x : x \in support -> 0 < d x.
   Proof. by rewrite /support in_set. Qed.
+
+  Lemma supportP x : x \in support <-> 0 < d x.
+  Proof.
+    split; first by apply: in_support.
+    by rewrite /support in_set.
+  Qed.      
 End support.
 
 Section bind.

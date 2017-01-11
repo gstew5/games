@@ -21,7 +21,7 @@ Section ValidMove.
   Context T `{gameClass : game T}.
   
   Definition valid_Move (t t' : (T ^ N)%type) :=
-    forall i : 'I_N, Move i t (upd i t t').
+    forall i : 'I_N, moves i (t i) (t' i).
 End ValidMove.
 
 Class LambdaClass (lT : finType) (rty : realFieldType)
@@ -57,7 +57,7 @@ Class SmoothnessAxiomClass (sT : finType) (sN : nat) (rty : realFieldType)
   SmoothnessAxiom :
     forall t t' : (sT ^ sN)%type,
       valid_Move t t' -> 
-      \sum_(i : 'I_sN) cost i (upd i t t') <=
+      \sum_(i : 'I_sN) cost i (upd i t (t' i)) <=
       lambda of sT * Cost t' + mu of sT * Cost t.
 Notation "'smooth_ax'" := (@SmoothnessAxiom _ _ _ _ _ _ _ _).
 
@@ -70,139 +70,6 @@ Class smooth (T : finType) (N : nat) (rty : realFieldType)
       (smoothnessAxiomInstance :
          SmoothnessAxiomClass gameInstance lambdaAxiomInstance muAxiomInstance)
   : Type := {}.
-
-(*************************)
-(** Negative cost smooth *)
-
-Class NegativeMuAxiomClass
-      `(MuClass) : Type :=
-  negative_mu_axiom : mu of mT <= 0.
-
-Class NegativeCostSmoothnessAxiomClass
-      (cT : finType) (cN : nat) (rty : realFieldType)
-      `(negativeGameInstance :
-          negative_cost_game cT cN rty)
-      `(lambdaAxiomInstance : LambdaAxiomClass cT rty)
-      `(negativeMuAxiomInstance : NegativeMuAxiomClass cT rty) : Type :=
-  NegativeCostSmoothnessAxiom :
-    forall t t' : (cT ^ cN)%type,
-      valid_Move t t' -> 
-      \sum_(i : 'I_cN) cost i (upd i t t') <=
-      lambda of cT * Cost t' + mu of cT * Cost t.
-Notation "'negative_cost_smooth_ax'" := (@NegativeCostSmoothnessAxiom _ _ _ _ _ _ _ _ _ _ _ _).
-
-Class negative_cost_smooth
-      `(negativeCostSmoothnessAxiomInstance :
-          NegativeCostSmoothnessAxiomClass)
-  : Type := {}.
-
-(** End negative cost smooth *)
-(*****************************)
-
-(******************)
-(** Payoff smooth *)
-
-Class PayoffMuAxiomClass
-      (mT : finType)
-      `(MuClass mT) : Type :=
-  payoff_mu_axiom : 0 <= mu of mT.
-
-Class PayoffSmoothnessAxiomClass
-      (cT : finType) (cN : nat) (rty : realFieldType)
-      `(gameInstance : payoff_game cT cN rty)
-      `(lambdaAxiomInstance : LambdaAxiomClass cT rty)
-      `(payoffMuAxiomInstance : PayoffMuAxiomClass cT rty) : Type :=
-  PayoffSmoothnessAxiom :
-    forall t t' : (cT ^ cN)%type,
-      valid_Move t t' ->
-      \sum_(i : 'I_cN) payoff i (upd i t t') >=
-      lambda of cT * Payoff t' - mu of cT * Payoff t.
-Notation "'payoff_smooth_ax'" := (@PayoffSmoothnessAxiom _ _ _ _ _ _ _ _ _ _ _ _).
-
-Class payoff_smooth
-      `(payoffsmoothnessAxiomInstance : PayoffSmoothnessAxiomClass)
-  : Type := {}.
-
-(** End payoff smooth *)
-(**********************)
-
-(******************************************)
-(** Payoff smooth -> negative cost smooth *)
-
-(** NOTE: This instance must have priority lower than that of 
-    finCloneMuInstance. For now, I've given it the (rather low)
-    priority 99 (0 is highest). An alternative solution is to 
-    make the cost_of_payoff instance stack type-directed. -GS *)
-Instance negativeCostMuInstance_of_payoffMuInstance
-         (T : finType) (rty : realFieldType)
-         (payoffMuInstance : MuClass T rty)
-  : MuClass T rty | 99 :=
-  - payoffMuInstance.
-
-Instance negativeCostMuAxiomInstance_of_payoffMuAxiomInstance
-         (mT : finType) (rty : realFieldType)
-         `(payoffMuAxiomInstance : PayoffMuAxiomClass mT rty)
-  : NegativeMuAxiomClass (negativeCostMuInstance_of_payoffMuInstance _).
-Proof.
-  rewrite /PayoffMuAxiomClass /mu_val in payoffMuAxiomInstance.
-  rewrite /NegativeMuAxiomClass /negativeCostMuInstance_of_payoffMuInstance
-          /mu_val.
-  move: payoffMuAxiomInstance. move => PMAI.
-    by rewrite oppr_le0.
-Qed.
-
-Lemma sum_opp N (rty : realFieldType) (T : finType)
-      (f : 'I_N -> {ffun 'I_N -> T} -> rty)
-      (t : {ffun 'I_N -> T}) :
-  \sum_(i < N) - f i t = \sum_(i < N) (-1%:R : rty) * f i t.
-Proof. apply: congr_big => //. move => i _. by rewrite mulN1r. Qed.
-
-Lemma sum_opp_D N (rty : realFieldType) (T : finType)
-      (f : 'I_N -> {ffun 'I_N -> T} -> rty)
-      (t : {ffun 'I_N -> T}) :
-  \sum_(i < N) - f i t = - \sum_(i < N) f i t.
-Proof. by rewrite sum_opp -big_distrr /= mulN1r. Qed.
-
-Lemma sum_opp_upd N (rty : realFieldType) (T : finType)
-      (f : 'I_N -> {ffun 'I_N -> T} -> rty)
-      (t t' : {ffun 'I_N -> T}) :
-  \sum_(i < N) - f i [ffun j => if i == j then t' j else t j] =
-  \sum_(i < N) (-1%:R : rty) * f i [ffun j => if i == j then t' j else t j].
-Proof. apply: congr_big => //. move => i _. by rewrite mulN1r. Qed.
-
-Lemma sum_opp_D_upd N (rty : realFieldType) (T : finType)
-      (f : 'I_N -> {ffun 'I_N -> T} -> rty)
-      (t t' : {ffun 'I_N -> T}) :
-  \sum_(i < N) - f i [ffun j => if i == j then t' j else t j] =
-  - \sum_(i < N) f i [ffun j => if i == j then t' j else t j].
-Proof. by rewrite sum_opp_upd -big_distrr /= mulN1r. Qed.
-
-Instance negativeCostSmoothnessAxiomInstance_of_payoffSmoothnessAxiomInstance
-         `(payoffSmoothnessAxiomInstance : PayoffSmoothnessAxiomClass)
-  : NegativeCostSmoothnessAxiomClass     
-      (negative_cost_game_of_payoff_game _ _ _ _) _
-      (negativeCostMuAxiomInstance_of_payoffMuAxiomInstance _ _ _).
-Proof.
-  rewrite /PayoffSmoothnessAxiomClass /mu_val in payoffSmoothnessAxiomInstance.
-  rewrite /NegativeCostSmoothnessAxiomClass /Cost /cost_fun
-          /negativeCostInstance_of_payoffInstance.
-  rewrite /mu_val /negativeCostMuInstance_of_payoffMuInstance.
-  move => t0 t' Hvm.
-  rewrite 2!sum_opp_D sum_opp_D_upd ler_oppl mulrNN opprD mulrN opprK.
-  apply: payoffSmoothnessAxiomInstance => //.
-Qed.
-
-Instance negative_cost_smooth_of_payoff_smooth
-         `(p_smooth : payoff_smooth)
-  : negative_cost_smooth _
-  :=
-    (Build_negative_cost_smooth
-       (negativeCostSmoothnessAxiomInstance_of_payoffSmoothnessAxiomInstance
-          _)
-    ).
-
-(** End Payoff smooth -> negative cost smooth *)
-(**********************************************)
 
 Section SmoothLemmas.
   Context {T : finType}.
@@ -223,9 +90,9 @@ Section SmoothLemmas.
     Cost t <= lambda of T * Cost t' + mu of T * Cost t.
   Proof.
     move=> Hpne Hval.
-    have H2: Cost t <= \sum_i cost i (upd i t t').
+    have H2: Cost t <= \sum_i cost i (upd i t (t' i)).
     { rewrite /Cost; apply: ler_sum=> /= i _; rewrite /PNE in Hpne.
-      by apply: (Hpne _ (upd i t t') (Hval i)).
+      by apply: Hpne.
     }
     by apply: ler_trans; [apply: H2|]; apply: smooth_ax.
   Qed.
@@ -251,9 +118,7 @@ Section SmoothLemmas.
   Definition dist_valid_Move
              (d : dist [finType of state N T] rty)
              (t' : state N T) :=
-    forall i : 'I_N,
-    forall t : {ffun 'I_N -> T},
-      0 < d t -> Move i t ((upd i t) t').
+    forall t : {ffun 'I_N -> T}, t \in support d -> valid_Move t t'.
   
   Lemma smooth_CCE_aux (d : dist [finType of state N T] rty) (t' : state N T) :
     CCE d ->
@@ -263,25 +128,27 @@ Section SmoothLemmas.
   Proof.
     move=> Hcce Hopt Hval.
     have H2: ExpectedCost d
-          <= \sum_(i : 'I_N) expectedUnilateralCost i d t'.
+          <= \sum_(i : 'I_N) expectedUnilateralCost i d (t' i).
     { apply: ler_sum=> /= i _.
-      by apply: (CCE_elim Hcce)=> ? X; apply: Hval; apply: in_support.
+      apply: (CCE_elim Hcce)=> t_i X.
+      by apply: Hval.
     }
     apply: ler_trans; [apply: H2|].
-    rewrite expectedUnilateralCost_linear.
+    rewrite (expectedUnilateralCost_linear d t').
     have H3:
       expectedValue d
         (fun t : {ffun 'I_N -> T} =>
-           \sum_(i < N) cost i (upd i t t'))
+           \sum_(i < N) cost i (upd i t (t' i)))
     <= expectedValue d
         (fun t : state N T => lambda of T * Cost t' + mu of T * Cost t).
     { rewrite expectedValue_linear expectedValue_const /expectedValue.
-      have H3: \sum_t d t * (\sum_(i < N) cost i ((upd i t) t'))
+      have H3: \sum_t d t * (\sum_(i < N) cost i ((upd i t) (t' i)))
             <= expectedValue d (fun t => lambda of T * Cost t' + mu of T * Cost t).
       { apply: ler_sum=> t _.
         case Hgt0: (0 < d t).
         { apply: ler_mull=> //; apply: smooth_ax.
-          by move=> i; apply: (Hval i t Hgt0).
+          apply: Hval => //.
+          by apply/supportP.
         }
         have H3: d t = 0.
         { move: (dist_positive d t)=> Hpos; rewrite ltr_def in Hgt0.

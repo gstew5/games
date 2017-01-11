@@ -25,8 +25,9 @@ Class PhiAxiomClass (pN : nat) (rty : realFieldType) (pT : finType)
       (gameClass : game costAxiomClass movesClass)
       (phiClass : PhiClass gameClass) : Type :=
   PhiAxiom : 
-    forall (i : 'I_pN) (t t' : state pN pT),
-      Move i t t' -> 
+    forall (i : 'I_pN) (t : state pN pT) (t_i' : pT),
+      moves i (t i) t_i' ->
+      let t' := upd i t t_i' in 
       Phi t' - Phi t = cost i t' - cost i t.
 Notation "'phi_ax'" := (@PhiAxiom _ _ _ _ _ _ _) (at level 50).
 
@@ -45,22 +46,24 @@ Section PotentialLemmas.
   Definition minimal : pred sT :=
     [pred t : sT | [forall t' : sT, Phi t <= Phi t']].
 
-  Lemma Phi_cost_le (t t' : sT) i :
-    Move i t t' -> 
+  Lemma Phi_cost_le (t : sT) i (t_i' : T) :
+    moves i (t i) t_i' ->
+    let t' := upd i t t_i' in 
     Phi t <= Phi t' -> cost i t <= cost i t'.
   Proof.
-    move=> Hmoves.
+    move=> Hmoves t'.
     rewrite -subr_ge0=> H0.
     generalize (phi_ax Hmoves)=> H2. 
     by rewrite -subr_ge0 -H2.
   Qed.      
 
-  Lemma cost_Phi_lt (t t' : sT) i :
-    Move i t t' -> 
+  Lemma cost_Phi_lt (t : sT) i t_i' :
+    moves i (t i) t_i' ->
+    let t' := upd i t t_i' in     
     cost i t' < cost i t -> Phi t' < Phi t.
   Proof.
     move=> Hmoves.
-    generalize (phi_ax Hmoves)=> H0.
+    generalize (phi_ax Hmoves)=> H0 t'.
     by rewrite -subr_lt0 -H0 subr_lt0.
   Qed.        
   
@@ -68,8 +71,8 @@ Section PotentialLemmas.
       a Pure Nash Equilibrium. *)
   Lemma minimal_PNE (t : sT) : minimal t -> PNE t.
   Proof.
-    rewrite /minimal=> /=; move/forallP=> H0 x.
-    by move=> t' Hmoves; move: H0; move/(_ t'); apply: Phi_cost_le.
+    rewrite /minimal=> /=; move/forallP=> H0 i.
+    by move=> t_i' Hmoves; move: H0; move/(_ (upd i t t_i')); apply: Phi_cost_le.
   Qed.
 
   Definition Phi_minimizer (t0 : sT) : sT := arg_min predT Phi t0.
@@ -100,8 +103,9 @@ Section BestResponseDynamics.
   Notation sT := (state N T).
   
   Inductive step : sT -> sT -> Prop :=
-  | step_progress t t' (i : 'I_N) :
-      Move i t t' -> 
+  | step_progress (t : sT) (i : 'I_N) t_i' :
+      moves i (t i) t_i' ->
+      let t' := upd i t t_i' in 
       cost i t' < cost i t -> step t t'.
       
   Definition halted (t : sT) := PNE t.
@@ -114,8 +118,6 @@ Section BestResponseDynamics.
 
   Lemma init_P t : P (init t).
   Proof. by move=> t0 /=; move/eqP=> <-. Qed.
-
-  (* TODO: This proof should be cleaned up. *)
   
   Lemma step_P s u t t' :
     inv (s,u,t) -> P (s,u,t) -> step t t' -> 
@@ -125,36 +127,38 @@ Section BestResponseDynamics.
     rename H5 into Hmoves.
     rename H6 into H5.
     have Hx: Phi t' < Phi t.
-    { by apply: (cost_Phi_lt Hmoves).
+    { subst t'.
+      by apply: (cost_Phi_lt Hmoves).
     }
     suff: ~~ s t'; last first.
     { apply/negP; move=> H6.
       move: (H3 _ H6)=> H7.
-      move: (ltrW Hx)=> H8.
+      move: (ltrW Hx)=> H8'.
       have H9: Phi t' <> Phi t.
       { apply/eqP.
         by rewrite ltr_eqF.
       }
       move: H7 H8 H9; rewrite !ler_eqVlt; case/orP; first by move/eqP=> <-.
-      move=> H7; case/orP; first by move/eqP=> <-.
-      move=> H8 H9.
-      have H10: Phi t' < Phi t'.
-      { apply: ltr_trans.
-        apply: H8.
-        by [].
+      move => H9 _ H10.
+      have H11: Phi t' < Phi t'.
+      { apply: ler_lt_trans.
+        apply: H8'.
+        apply: H9.
       }
-      by rewrite ltrr in H10.
+      by rewrite ltrr in H11.
     }
     move=> H6.
     move: (H3 t')=> /=.
     move: (H0 t')=> /=.
     case: (s t') H6=> //= _.
     rewrite (mem_enum sT _).
-    move=> -> _; split=> //.
+    move=> He _; split.
+    { by rewrite -H8 in He; rewrite He. }
     move=> t0; case/orP; first by move/eqP=> <-.
     move=> H6.
     apply: ltrW.
     apply: ltr_le_trans.
+    subst t'.
     apply: Hx.
     apply: (H3 t0 H6).
   Qed.    
@@ -165,7 +169,7 @@ Section BestResponseDynamics.
     rewrite /halted=> H0; inversion 1; subst.
     move: (H0 i)=> H4.
     generalize (ltr_le_asym (cost i t') (cost i t)).
-    by rewrite H3 H4.
+    by subst t'; rewrite H3 H4.
   Qed.    
 
   Lemma best_response_safe t : 
@@ -182,7 +186,7 @@ Section BestResponseDynamics.
     }
     rewrite negb_forall in H2; case: (existsP H2)=> i; rewrite negb_forall.
     case/existsP=> t'; rewrite negb_imply; case/andP=> H3; move/negP=> H4.
-    exists t'; apply: (step_progress (i:=i))=> //.
+    exists (upd i t t'); apply: (step_progress (i:=i))=> //.
     by rewrite ltrNge; apply/negP.
   Qed.
   
@@ -207,7 +211,7 @@ Section PriceOfStabilityBound.
   
   (** We assume the social cost function is positive. *)
   Hypothesis Cost_pos : forall t : sT, 0 < Cost t.
-
+  
   (** The bound [A] must also be positive; otherwise, dividing by [A] 
       in [AB_bound_Phi] is undefined. *)
   Variables A B : rty.

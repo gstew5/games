@@ -138,9 +138,15 @@ Section AtomicRoutingGame.
     ecosts x y i.
 
   Instance phiInstance : PhiClass gameInstance := phiFun.
+
+  (** Lift a unilateral move to a state update *)
+  Definition Move (i : 'I_num_players) : rel st :=
+    [fun t t' : st =>
+       [&& moves i (t i) (t' i)
+         & [forall j : 'I_num_players, (i != j) ==> (t j == t' j)]]].
   
   Lemma traffic11 (i : 'I_num_players) (x y : 'I_#|T|) t t' :
-    Move i t t' ->
+    Move i t t' -> 
     edgeOfPlayer i t' x y ->
     edgeOfPlayer i t x y ->     
     traffic_edge t' x y = traffic_edge t x y.
@@ -277,7 +283,7 @@ Section AtomicRoutingGame.
     by rewrite opprB addrC addrA [-f _ + _]addrC subr_xx sub0r. 
   Qed.    
 
-  Lemma phi_exact (i : 'I_num_players) (t t' : st) :
+  Lemma phi_exact' (i : 'I_num_players) (t t' : st) :
     Move i t t' -> 
     Phi t' - Phi t = cost i t' - cost i t.
   Proof.
@@ -323,6 +329,18 @@ Section AtomicRoutingGame.
     by rewrite subr_xx.
   Qed.
 
+  Lemma phi_exact (i : 'I_num_players) (t : st) t_i' :
+    moves i (t i) t_i' ->
+    let t' := upd i t t_i' in 
+    Phi t' - Phi t = cost i t' - cost i t.
+  Proof.
+    move => H t'; apply: phi_exact'.
+    rewrite /t'; apply/andP; split.
+    { rewrite /upd ffunE eq_refl; apply: H. }
+    apply/forallP; rewrite /upd => j; apply/implyP.
+    rewrite ffunE; case: (i == j) => //.
+  Qed.
+    
   Instance PhiAxiomInstance : PhiAxiomClass phiInstance := phi_exact.
   Instance AtomicPotentialInstance : Potential PhiAxiomInstance. 
 End AtomicRoutingGame.  

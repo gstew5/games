@@ -163,22 +163,22 @@ Section gameDefs.
   (** We assume there's at least one strategy vector. *)
   Variable t0 : state N T. 
   
-  (** Lift a unilateral move to a state update *)
-  Definition Move (i : 'I_N) : rel (state N T) :=
-    [fun t t' : state N T =>
-       [&& moves i (t i) (t' i)
-         & [forall j : 'I_N, (i != j) ==> (t j == t' j)]]].
+  Definition upd (i : 'I_N) :=
+    [fun t : (T ^ N)%type =>
+       [fun t_i' : T => 
+          finfun (fun j => if i == j then t_i' else t j)]].
   
   (** [t] is a Pure Nash Equilibrium (PNE) if no player is better off
       by moving to another strategy. *)
   Definition PNE (t : state N T) : Prop :=
-    forall (i : 'I_N) (t' : state N T),
-      Move i t t' -> cost i t <= cost i t'.
+    forall (i : 'I_N) (t_i' : T),
+      moves i (t i) t_i' -> cost i t <= cost i (upd i t t_i').
 
   (** PNE is decidable. *)
   Definition PNEb (t : state N T) : bool :=
     [forall i : 'I_N,
-       [forall t' : state N T, Move i t t' ==> (cost i t <= cost i t')]].    
+      [forall t_i' : T,
+        moves i (t i) t_i' ==> (cost i t <= cost i (upd i t t_i'))]].    
 
   Lemma PNE_PNEb t : PNE t <-> PNEb t.
   Proof.
@@ -255,21 +255,17 @@ Section gameDefs.
     by rewrite -exchange_big=> /=; apply/congr_big=> //= i _; rewrite mulr_sumr.
   Qed.
   
-  Definition upd (i : 'I_N) :=
-    [fun t t' : (T ^ N)%type =>
-       finfun (fun j => if i == j then t' j else t j)].
-  
   (** The expected cost of an i-unilateral deviation to strategy [t' i] *)
   Definition expectedUnilateralCost
              (i : 'I_N)
              (d : dist [finType of state N T] rty)
-             (t' : state N T) :=
-    expectedValue d (fun t : state N T => cost i (upd i t t')).
+             (t_i' : T) :=
+    expectedValue d (fun t : state N T => cost i (upd i t t_i')).
 
   Lemma expectedUnilateralCost_linear d t' :
-    \sum_(i < N) expectedUnilateralCost i d t'
+    \sum_(i < N) expectedUnilateralCost i d (t' i)
     = expectedValue d (fun t : state N T =>
-                         \sum_(i : 'I_N) cost i (upd i t t')).
+                         \sum_(i : 'I_N) cost i (upd i t (t' i))).
   Proof.
     rewrite /expectedUnilateralCost /expectedValue.
     by rewrite -exchange_big=> /=; apply/congr_big=> //= i _; rewrite mulr_sumr.
@@ -280,11 +276,10 @@ Section gameDefs.
   Definition expectedUnilateralCondCost
              (i : 'I_N)
              (d : dist [finType of state N T] rty)
-             (t_i : T)
-             (t' : state N T) :=
+             (t_i t_i' : T) :=
     expectedCondValue
       d
-      (fun t : state N T => cost i (upd i t t'))
+      (fun t : state N T => cost i (upd i t t_i'))
       [pred tx : state N T | tx i == t_i].
   
   (** \epsilon-Approximate Correlated Equilibria
@@ -297,16 +292,16 @@ Section gameDefs.
       - [t' i] must be a valid move for [i] from [t i].
    *)
   Definition eCE (epsilon : rty) (d : dist [finType of state N T] rty) : Prop :=
-    forall (i : 'I_N) (t_i : T) (t' : state N T),
-      (forall t : state N T, t i = t_i -> t \in support d -> Move i t (upd i t t')) -> 
-      expectedCost i d <= expectedUnilateralCondCost i d t_i t' + epsilon.
+    forall (i : 'I_N) (t_i t_i' : T),
+      (forall t : state N T, t i = t_i -> t \in support d -> moves i t_i t_i') -> 
+      expectedCost i d <= expectedUnilateralCondCost i d t_i t_i' + epsilon.
 
   Definition eCEb (epsilon : rty) (d : dist [finType of state N T] rty) : bool :=
     [forall i : 'I_N,
-      [forall t_i : T, 
-        [forall t' : state N T,
-          [forall t : state N T, (t i == t_i) ==> (t \in support d) ==> Move i t (upd i t t')]
-          ==> (expectedCost i d <= expectedUnilateralCondCost i d t_i t' + epsilon)]]].
+      [forall t_i : T,
+        [forall t_i' : T, 
+          [forall t : state N T, (t i == t_i) ==> (t \in support d) ==> moves i t_i t_i']
+          ==> (expectedCost i d <= expectedUnilateralCondCost i d t_i t_i' + epsilon)]]].
 
   Lemma eCE_eCEb eps d : eCE eps d <-> eCEb eps d.
   Proof.
@@ -372,9 +367,9 @@ Section gameDefs.
         support of [d].
    *)
   Definition eCCE (epsilon : rty) (d : dist [finType of state N T] rty) : Prop :=
-    forall (i : 'I_N) (t' : state N T),
-      (forall t : state N T, t \in support d -> Move i t (upd i t t')) -> 
-      expectedCost i d <= expectedUnilateralCost i d t' + epsilon.
+    forall (i : 'I_N) (t_i' : T),
+      (forall t : state N T, t \in support d -> moves i (t i) t_i') -> 
+      expectedCost i d <= expectedUnilateralCost i d t_i' + epsilon.
 
   Lemma ler_psum
      : forall (R : numDomainType) (I : Type) (r : seq I) 
@@ -405,11 +400,12 @@ Section gameDefs.
   
   Lemma eCE_eCCE epsilon d : eCE epsilon d -> eCCE epsilon d.
   Proof.
-    move => Hx i t' H2; rewrite /eCE in Hx; move: (Hx i).
+    move => Hx i t_i' H2; rewrite /eCE in Hx; move: (Hx i).
     rewrite /expectedUnilateralCost /expectedUnilateralCondCost
             /expectedCost /expectedValue /expectedCondValue.
-    move/(_ (t' i) t') => Hy; apply: ler_trans.
-    { apply: Hy; move => t'' Heq Hsup; apply: H2 => //. }
+    move/(_ t_i' t_i') => Hy; apply: ler_trans.
+    { apply: Hy; move => t'' Heq Hsup.
+      by move: (H2 t'' Hsup); rewrite Heq. }
     apply: ler_add => //; apply: ler_psum_simpl.
     move => ix; apply: mulr_ge0 => //.
     apply: dist_positive.
@@ -417,9 +413,9 @@ Section gameDefs.
   
   Definition eCCEb (epsilon : rty) (d : dist [finType of state N T] rty) : bool :=
     [forall i : 'I_N,
-       [forall t' : state N T,
-          [forall t : state N T, (t \in support d) ==> Move i t (upd i t t')]
-      ==> (expectedCost i d <= expectedUnilateralCost i d t' + epsilon)]].
+       [forall t_i' : T,
+          [forall t : state N T, (t \in support d) ==> moves i (t i) t_i']
+      ==> (expectedCost i d <= expectedUnilateralCost i d t_i' + epsilon)]].
 
   Lemma eCCE_eCCEb eps d : eCCE eps d <-> eCCEb eps d.
   Proof.
@@ -453,9 +449,9 @@ Section gameDefs.
   Proof. by apply/eCE_eCCE. Qed.
   
   Lemma CCE_elim (d : dist [finType of state N T] rty) (H1 : CCE d) :
-    forall (i : 'I_N) (t' : state N T),
-    (forall t : state N T, t \in support d -> Move i t (upd i t t')) ->
-    expectedCost i d <= expectedUnilateralCost i d t'.
+    forall (i : 'I_N) (t_i' : T),
+    (forall t : state N T, t \in support d -> moves i (t i) t_i') ->
+    expectedCost i d <= expectedUnilateralCost i d t_i'.
   Proof.
     rewrite /CCE /eCCE in H1 => i t' H2.
     by move: (H1 i t' H2); rewrite addr0.
