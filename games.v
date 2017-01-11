@@ -300,6 +300,67 @@ Section gameDefs.
     forall (i : 'I_N) (t_i : T) (t' : state N T),
       (forall t : state N T, t i = t_i -> t \in support d -> Move i t (upd i t t')) -> 
       expectedCost i d <= expectedUnilateralCondCost i d t_i t' + epsilon.
+
+  Definition eCEb (epsilon : rty) (d : dist [finType of state N T] rty) : bool :=
+    [forall i : 'I_N,
+      [forall t_i : T, 
+        [forall t' : state N T,
+          [forall t : state N T, (t i == t_i) ==> (t \in support d) ==> Move i t (upd i t t')]
+          ==> (expectedCost i d <= expectedUnilateralCondCost i d t_i t' + epsilon)]]].
+
+  Lemma eCE_eCEb eps d : eCE eps d <-> eCEb eps d.
+  Proof.
+    split.
+    { move=> H1; apply/forallP=> x; apply/forallP=> y; apply/forallP=> z; apply/implyP=> H2.
+      apply: H1=> // t H3; move: H2; move/forallP/(_ t)/implyP => H4 H5.
+      by rewrite H3 in H4; move: (H4 (eq_refl y)); move/implyP; apply.
+    }
+    move/forallP => H1 ix t_i t' H2.
+    move: (forallP (H1 ix)); move/(_ t_i)/forallP/(_ t')/implyP; apply.
+    apply/forallP => t''; apply/implyP; move/eqP => He; subst t_i.
+    by apply/implyP => H4; apply: H2.
+  Qed.    
+    
+  Lemma eCEP eps d : reflect (eCE eps d) (eCEb eps d).
+  Proof.
+    move: (eCE_eCEb eps d); case H1: (eCEb eps d).
+    by move=> H2; constructor; rewrite H2.
+    by move=> H2; constructor; rewrite H2.
+  Qed.
+  
+  Definition CE (d : dist [finType of state N T] rty) : Prop := eCE 0 d.
+
+  Definition CEb (d : dist [finType of state N T] rty) : bool := eCEb 0 d.
+
+  Lemma CE_CEb d : CE d <-> CEb d.
+  Proof. apply: eCE_eCEb. Qed.
+    
+  Lemma CEP d : reflect (CE d) (CEb d).
+  Proof. apply: eCEP. Qed.
+  
+  (** Mixed Nash Equilibria
+      ~~~~~~~~~~~~~~~~~~~~~
+      The expected cost of a unilateral deviation to state (t' i) is greater
+      or equal to the expected cost of distribution [d]. 
+
+      NOTES: 
+      - [d] must be a product distribution, of the form 
+        [d_0 \times d_1 \times ... \times d_{#players-1}].
+
+      - [t'] must be a valid move for [i] from any state in the 
+        support of [d].
+   *)
+  Definition MNE (f : {ffun 'I_N -> dist T rty}) : Prop :=
+    CE (prod_dist f).
+  
+  Definition MNEb (f : {ffun 'I_N -> dist T rty}) : bool :=
+    CEb (prod_dist f).
+
+  Lemma MNE_MNEb d : MNE d <-> MNEb d.
+  Proof. by apply: CE_CEb. Qed.
+    
+  Lemma MNEP d : reflect (MNE d) (MNEb d).
+  Proof. by apply: CEP. Qed.
   
   (** \epsilon-Approximate Coarse Correlated Equilibria
       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -388,6 +449,9 @@ Section gameDefs.
    *)
   Definition CCE (d : dist [finType of state N T] rty) : Prop := eCCE 0 d.
 
+  Lemma CE_CCE d : CE d -> CCE d.
+  Proof. by apply/eCE_eCCE. Qed.
+  
   Lemma CCE_elim (d : dist [finType of state N T] rty) (H1 : CCE d) :
     forall (i : 'I_N) (t' : state N T),
     (forall t : state N T, t \in support d -> Move i t (upd i t t')) ->
@@ -404,28 +468,4 @@ Section gameDefs.
     
   Lemma CCEP d : reflect (CCE d) (CCEb d).
   Proof. apply: eCCEP. Qed.
-  
-  (** Mixed Nash Equilibria
-      ~~~~~~~~~~~~~~~~~~~~~
-      The expected cost of a unilateral deviation to state (t' i) is greater
-      or equal to the expected cost of distribution [d]. 
-
-      NOTES: 
-      - [d] must be a product distribution, of the form 
-        [d_0 \times d_1 \times ... \times d_{#players-1}].
-
-      - [t'] must be a valid move for [i] from any state in the 
-        support of [d].
-   *)
-  Definition MNE (f : {ffun 'I_N -> dist T rty}) : Prop :=
-    CCE (prod_dist f).
-  
-  Definition MNEb (f : {ffun 'I_N -> dist T rty}) : bool :=
-    CCEb (prod_dist f).
-
-  Lemma MNE_MNEb d : MNE d <-> MNEb d.
-  Proof. by apply: CCE_CCEb. Qed.
-    
-  Lemma MNEP d : reflect (MNE d) (MNEb d).
-  Proof. by apply: CCEP. Qed.
 End gameDefs.
