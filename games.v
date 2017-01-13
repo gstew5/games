@@ -255,6 +255,15 @@ Section gameDefs.
     by rewrite -exchange_big=> /=; apply/congr_big=> //= i _; rewrite mulr_sumr.
   Qed.
   
+  Definition expectedCondCost
+             (i : 'I_N)
+             (d : dist [finType of state N T] rty)
+             (t_i : T) :=
+    expectedCondValue
+      d
+      (fun t : state N T => cost i t)
+      [pred tx : state N T | tx i == t_i].
+  
   (** The expected cost of an i-unilateral deviation to strategy [t' i] *)
   Definition expectedUnilateralCost
              (i : 'I_N)
@@ -294,14 +303,14 @@ Section gameDefs.
   Definition eCE (epsilon : rty) (d : dist [finType of state N T] rty) : Prop :=
     forall (i : 'I_N) (t_i t_i' : T),
       (forall t : state N T, t i = t_i -> t \in support d -> moves i t_i t_i') -> 
-      expectedCost i d <= expectedUnilateralCondCost i d t_i t_i' + epsilon.
+      expectedCondCost i d t_i <= expectedUnilateralCondCost i d t_i t_i' + epsilon.
 
   Definition eCEb (epsilon : rty) (d : dist [finType of state N T] rty) : bool :=
     [forall i : 'I_N,
       [forall t_i : T,
         [forall t_i' : T, 
           [forall t : state N T, (t i == t_i) ==> (t \in support d) ==> moves i t_i t_i']
-          ==> (expectedCost i d <= expectedUnilateralCondCost i d t_i t_i' + epsilon)]]].
+          ==> (expectedCondCost i d t_i <= expectedUnilateralCondCost i d t_i t_i' + epsilon)]]].
 
   Lemma eCE_eCEb eps d : eCE eps d <-> eCEb eps d.
   Proof.
@@ -397,20 +406,7 @@ Section gameDefs.
     { apply: congr_big => //. }
     apply ler_psum => //.
   Qed.
-  
-  Lemma eCE_eCCE epsilon d : eCE epsilon d -> eCCE epsilon d.
-  Proof.
-    move => Hx i t_i' H2; rewrite /eCE in Hx; move: (Hx i).
-    rewrite /expectedUnilateralCost /expectedUnilateralCondCost
-            /expectedCost /expectedValue /expectedCondValue.
-    move/(_ t_i' t_i') => Hy; apply: ler_trans.
-    { apply: Hy; move => t'' Heq Hsup.
-      by move: (H2 t'' Hsup); rewrite Heq. }
-    apply: ler_add => //; apply: ler_psum_simpl.
-    move => ix; apply: mulr_ge0 => //.
-    apply: dist_positive.
-  Qed.
-  
+
   Definition eCCEb (epsilon : rty) (d : dist [finType of state N T] rty) : bool :=
     [forall i : 'I_N,
        [forall t_i' : T,
@@ -445,6 +441,38 @@ Section gameDefs.
    *)
   Definition CCE (d : dist [finType of state N T] rty) : Prop := eCCE 0 d.
 
+  Lemma sum1_sum (f : state N T -> rty) i :
+    \sum_(ti : T) \sum_(t : state N T | [pred tx | tx i == ti] t) f t =
+    \sum_t f t.
+  Proof.
+  Admitted.    
+  
+  Lemma CE_CCE d : CE d -> CCE d.
+  Proof.
+    move => Hx i t_i' H2; rewrite /CE in Hx; move: (Hx i).
+    rewrite /expectedUnilateralCost /expectedUnilateralCondCost
+            /expectedCost /expectedCondCost /expectedValue /expectedCondValue.
+    move => Hy.
+    rewrite addr0.
+    have Hz:
+      \sum_(ti : T) \sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i t <=
+      \sum_(ti : T) (\sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i (upd i t t_i')).
+    { apply: ler_sum => tx _ //.
+      move: (Hy tx t_i') => Hw.
+      apply: ler_trans.
+      { by apply: Hw; move => t <- Hs; apply: H2. }
+      by rewrite addr0. }
+    have ->: \sum_t d t * (cost) i t =
+             \sum_ti \sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i t.
+    { by rewrite -(sum1_sum _ i). }
+    have ->:
+      \sum_t d t * (cost) i (((upd i) t) t_i') =
+      \sum_ti \sum_(t : state N T | [pred tx | tx i == ti] t)
+         d t * (cost) i (((upd i) t) t_i').
+    { by rewrite -(sum1_sum _ i). }    
+    by apply: Hz.
+  Qed.
+  
   Lemma CE_CCE d : CE d -> CCE d.
   Proof. by apply/eCE_eCCE. Qed.
   
