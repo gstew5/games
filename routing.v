@@ -137,7 +137,7 @@ Section AtomicRoutingGame.
     \sum_(1 <= i < (traffic_edge s x y).+1)
     ecosts x y i.
 
-  Instance phiInstance : PhiClass gameInstance := phiFun.
+  Instance phiInstance : PhiClass costAxiomInstance movesInstance := phiFun.
 
   (** Lift a unilateral move to a state update *)
   Definition Move (i : 'I_num_players) : rel st :=

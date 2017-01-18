@@ -15,15 +15,13 @@ Local Open Scope ring_scope.
 
 Class PhiClass (pN : nat) (rty : realFieldType) (pT : finType)
       `(costAxiomClass : CostAxiomClass pN rty pT)
-      (movesClass : MovesClass pN pT)
-      (gameClass : game costAxiomClass movesClass)
+       (movesClass : MovesClass pN pT)
   : Type := Phi : state pN pT -> rty.
 
 Class PhiAxiomClass (pN : nat) (rty : realFieldType) (pT : finType)
       `(costAxiomClass : CostAxiomClass pN rty pT)
-      (movesClass : MovesClass pN pT)
-      (gameClass : game costAxiomClass movesClass)
-      (phiClass : PhiClass gameClass) : Type :=
+       (movesClass : MovesClass pN pT)
+       (phiClass : PhiClass costAxiomClass movesClass) : Type :=
   PhiAxiom : 
     forall (i : 'I_pN) (t : state pN pT) (t_i' : pT),
       moves i (t i) t_i' ->
@@ -34,8 +32,7 @@ Notation "'phi_ax'" := (@PhiAxiom _ _ _ _ _ _ _) (at level 50).
 Class Potential (N : nat) (rty : realFieldType) (T : finType)
       `(costAxiomClass : CostAxiomClass N rty T)
       (movesClass : MovesClass N T)
-      (gameClass : game costAxiomClass movesClass)
-      (phiClass : PhiClass gameClass)
+      (phiClass : PhiClass costAxiomClass movesClass)
       (phiAxiomClass : PhiAxiomClass phiClass)
   : Type := {}.
 
