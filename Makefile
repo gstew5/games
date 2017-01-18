@@ -103,7 +103,8 @@ VFILES:=dist.v\
   numerics.v\
   potential.v\
   routing.v\
-  smooth.v
+  smooth.v\
+  christodoulou.v
 
 ifneq ($(filter-out archclean clean cleanall printenv,$(MAKECMDGOALS)),)
 -include $(addsuffix .d,$(VFILES))

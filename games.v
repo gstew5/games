@@ -473,9 +473,6 @@ Section gameDefs.
     by apply: Hz.
   Qed.
   
-  Lemma CE_CCE d : CE d -> CCE d.
-  Proof. by apply/eCE_eCCE. Qed.
-  
   Lemma CCE_elim (d : dist [finType of state N T] rty) (H1 : CCE d) :
     forall (i : 'I_N) (t_i' : T),
     (forall t : state N T, t \in support d -> moves i (t i) t_i') ->
