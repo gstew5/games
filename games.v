@@ -160,8 +160,12 @@ End payoffGameDefs.
 Section gameDefs.
   Context {T} {N} `(gameAxiomClassA : game T N) `(gameAxiomClassB : game T N).
 
-  (** We assume there's at least one strategy vector. *)
-  Variable t0 : state N T. 
+  (** We assume there's at least one strategy vector. 
+      (In fact, we assume two -- though they may equal one another. 
+       This makes it easier to state potentially conflicting assumptions on 
+       distinct uses of t0 and t1.*)
+  Variable t0 : state N T.
+  Variable t1 : state N T.   
   
   Definition upd (i : 'I_N) :=
     [fun t : (T ^ N)%type =>
@@ -211,13 +215,13 @@ Section gameDefs.
       equilibrium social cost to optimal social cost. We want the 
       ratio to be as close to 1 as possible. *)
   Definition POA : rty :=
-    Cost (arg_max PNEb Cost t0) / Cost (arg_min optimal Cost t0).
+    Cost (arg_max PNEb Cost t0) / Cost (arg_min optimal Cost t1).
 
   (** The Price of Stability for game [T] is the ratio of BEST
       equilibrium social cost to optimal social cost. We want the 
       ratio to be as close to 1 as possible. *)
   Definition POS : rty :=
-    Cost (arg_min PNEb Cost t0) / Cost (arg_min optimal Cost t0).
+    Cost (arg_min PNEb Cost t0) / Cost (arg_min optimal Cost t1).
 
   Lemma POS_le_POA (H1 : PNEb t0) (Hcost : forall t, Cost t > 0) : POS <= POA.
   Proof.
@@ -225,8 +229,8 @@ Section gameDefs.
     move: (min_le_max Cost H1); rewrite /min /max=> H2.
     rewrite ler_pdivr_mulr=> //.
     move: H2; move: (Cost _)=> x; move: (Cost _)=> y.
-    have Hx: Cost (arg_min optimal Cost t0) != 0.
-    { move: (Hcost (arg_min optimal Cost t0)); rewrite ltr_def.
+    have Hx: Cost (arg_min optimal Cost t1) != 0.
+    { move: (Hcost (arg_min optimal Cost t1)); rewrite ltr_def.
       by case/andP=> H2 H3. }
     move: Hx; move: (Cost _)=> z Hx H2.
     have H3: (z = z / 1) by rewrite (GRing.divr1 z).

@@ -98,23 +98,37 @@ Section SmoothLemmas.
   Qed.
 
   Lemma smooth_PNE (t t' : (T ^ N)%type) :
-    mu of T < 1 -> 
     PNE t ->
     valid_Move t t' ->
     Cost t <= (lambda of T / (1 - mu of T)) * Cost t'.
   Proof.
-    move=> Hlt1 Hpne Hval.
+    move=> Hpne Hval.
     move: (smooth_PNE_aux Hpne Hval).
     rewrite addrC -ler_subl_addl.
     have H3: Cost t - mu of T * Cost t = (1 - mu of T) * (Cost t).
     { by rewrite -{1}[Cost t]mul1r -mulrBl.
     }
     rewrite H3 mulrC -ler_pdivl_mulr; last first.
-    { by rewrite ltr_subr_addr addrC addr0.
+    { move: mu_lt1.
+      by rewrite ltr_subr_addr addrC addr0.
     }
     by rewrite -mulrA [(1 - _)^-1 * _]mulrC mulrA.
   Qed.
 
+  Lemma smooth_PNE_POA (t0 t1 : state N T) :
+    PNE t0 ->
+    optimal t1 ->
+    valid_Move (T:=T) (arg_max PNEb Cost t0) (arg_min optimal Cost t1) ->
+    0 < Cost (arg_min optimal Cost t1) -> 
+    POA t0 t1 <= lambda of T / (1 - mu of T).
+  Proof.
+    move/PNEP => Ht0 Hopt Hval Hpos.
+    have Hpne: PNE (arg_max PNEb Cost t0).
+    { by case: (andP (arg_maxP Cost Ht0)); move/PNEP. }
+    move: (smooth_PNE (t':=arg_min optimal Cost t1) Hpne Hval) => H2.
+    by rewrite -ler_pdivr_mulr in H2.
+  Qed.
+  
   Definition dist_valid_Move
              (d : dist [finType of state N T] rty)
              (t' : state N T) :=
@@ -122,11 +136,10 @@ Section SmoothLemmas.
   
   Lemma smooth_CCE_aux (d : dist [finType of state N T] rty) (t' : state N T) :
     CCE d ->
-    optimal t' ->
     dist_valid_Move d t' -> 
     ExpectedCost d <= lambda of T * Cost t' + mu of T * ExpectedCost d.
   Proof.
-    move=> Hcce Hopt Hval.
+    move=> Hcce Hval.
     have H2: ExpectedCost d
           <= \sum_(i : 'I_N) expectedUnilateralCost i d (t' i).
     { apply: ler_sum=> /= i _.
@@ -173,20 +186,19 @@ Section SmoothLemmas.
   Qed.
 
   Lemma smooth_CCE (d : dist [finType of state N T] rty) (t' : state N T) :
-    mu of T < 1 -> 
     CCE d -> 
-    optimal t' ->
     dist_valid_Move d t' ->
     ExpectedCost d <= (lambda of T / (1 - mu of T)) * Cost t'.
   Proof.
-    move=> Hlt1 Hcce Hopt Hval.
-    move: (smooth_CCE_aux Hcce Hopt Hval).
+    move=> Hcce Hval.
+    move: (smooth_CCE_aux Hcce Hval).
     rewrite addrC -ler_subl_addl.
     have H3: ExpectedCost d - mu of T * ExpectedCost d = (1 - mu of T) * (ExpectedCost d).
     { by rewrite -{1}[ExpectedCost d]mul1r -mulrBl.
     }
     rewrite H3 mulrC -ler_pdivl_mulr; last first.
-    { by rewrite ltr_subr_addr addrC addr0.
+    { move: mu_lt1.
+      by rewrite ltr_subr_addr addrC addr0.
     }
     by rewrite -mulrA [(1 - _)^-1 * _]mulrC mulrA.
   Qed.
