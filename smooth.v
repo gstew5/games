@@ -7,7 +7,7 @@ From mathcomp Require Import all_algebra.
 
 Import GRing.Theory Num.Def Num.Theory.
 
-Require Import extrema dist games dynamics potential.
+Require Import extrema dist games dynamics.
 
 (** (\lambda,\mu)-Smooth Games
 
@@ -159,7 +159,9 @@ Section SmoothLemmas.
             <= expectedValue d (fun t => lambda of T * Cost t' + mu of T * Cost t).
       { apply: ler_sum=> t _.
         case Hgt0: (0 < d t).
-        { apply: ler_mull=> //; apply: smooth_ax.
+        { have Hge0: (0 <= d t).
+          { rewrite le0r. apply /orP. right => //. }
+          apply: ler_mull=> //; apply: smooth_ax.
           apply: Hval => //.
           by apply/supportP.
         }

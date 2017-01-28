@@ -10,7 +10,7 @@ From mathcomp Require Import all_algebra.
 
 Import GRing.Theory Num.Def Num.Theory.
 
-Require Import games potential smooth christodoulou.
+Require Import games smooth christodoulou.
 
 Local Open Scope ring_scope.
 
@@ -39,7 +39,7 @@ Section CongestionGame.
     { apply: mulrn_wge0.
       apply: aCoeff_positive. }
     apply: bCoeff_positive.
-  Qed.    
+  Qed.
   
   Notation st := ({ffun 'I_num_players -> strategy})%type.
 
@@ -61,10 +61,10 @@ Section CongestionGame.
     apply big_ind => //; first by apply: addr_ge0.
     move => i0 _; case: ((f i) i0) => //.
     apply: evalCost_ge0.
-  Qed.    
+  Qed.
 
   Definition movesFun (i : 'I_num_players) : rel strategy :=
-    [fun _ _ : strategy => true].  
+    [fun _ _ : strategy => true].
 
   Instance movesInstance
     : MovesClass num_players [finType of strategy]
@@ -84,7 +84,14 @@ Section CongestionGame.
     y%:Q * (z%:Q + 1) <= 5%:Q/3%:Q * y%:Q^2 + 1%:Q/3%:Q * z%:Q^2.
   Proof. by apply: Christodoulou.result. Qed.
 
+  Lemma asdf (y z : nat) (b : rat) :
+    b *+ y <= 5%:Q/3%:Q * b *+ y + 1%:Q/3%:Q * b *+ z.
+  Proof.
+    (* apply ler_mull2 with (z:= *)
+  Admitted.
+
   Lemma christodoulou' (y z : nat) (a b : rat) :
+    0 <= b ->
     a * (y%:Q * (z%:Q + 1)) + b * y%:Q
     <= 5%:Q/3%:Q * ((a *+ y + b)*+y) + 1%:Q/3%:Q * ((a *+ z + b)*+z).
   Proof.
@@ -160,6 +167,8 @@ Section CongestionGame.
         rewrite (le0r c); case/orP.
         { move/eqP => ->; rewrite !mul0r -mulr_natl mulr0 //. }
         move => Hgt.
+        have Hge: (0 <= c).
+        { rewrite le0r. apply /orP. by right. }
         rewrite -mulr_natl mulrC; apply: ler_mull => //.
         rewrite mulrDr mulr1 mulnDl mul1n.
         rewrite mulrC -intrM -intrD //. }
@@ -191,9 +200,3 @@ Section CongestionGame.
         rat_realFieldType
         _ _ _ _ _ _ _ _ _.
 End CongestionGame.
-  
-
-    
-
-  
-  

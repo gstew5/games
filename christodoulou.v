@@ -223,7 +223,7 @@ Module Christodoulou.
       by rewrite -mulrA.
     rewrite -mulrA  H2.
     apply ler_mull with (x := 1%:Q) (y := y%:Q * (2%:Q / 3%:Q)) (z := y%:Q).
-    apply sr3 => //.
+    rewrite le0r. apply /orP. right. apply sr3 => //.
     apply ler_mull2 with (z := 3%:Q / 2%:Q) => //.
     rewrite mulrC mul1r.
     have H3: (y%:Q * (2%:Q / 3%:Q) = 2%:Q / 3%:Q * y%:Q) by rewrite mulrC.
@@ -274,7 +274,7 @@ Module Christodoulou.
       by rewrite -mulrA.
     rewrite -mulrA  H2.
     apply ler_mull with (x := 1%:Q) (y := z%:Q * (1%:Q / 3%:Q)) (z := z%:Q).
-    apply sr3 => //.
+    rewrite le0r. apply /orP. right. apply sr3 => //.
     have H3: (ltn (S O) 2) by [].
     apply: ltn_trans. apply H3. apply H.
     apply ler_mull2 with (z := 3%:Q / 1%:Q).

@@ -125,10 +125,13 @@ Local Open Scope ring_scope.
 
 (** An arithmetic fact that should probably be moved elsewhere, and
     also generalized. *)
-Lemma ler_mull (rty : realFieldType) (x y z : rty) (Hgt0 : 0 < z) :
+Lemma ler_mull (rty : realFieldType) (x y z : rty) (Hgt0 : 0 <= z) :
   x <= y -> z * x <= z * y.
 Proof.
-  move=> H; rewrite -ler_pdivr_mull=> //; rewrite mulrA.
+  move=> H.
+  rewrite le0r in Hgt0. move: Hgt0 => /orP [Heq0|Hgt0].
+  move: Heq0 => /eqP ->. by rewrite 2!mul0r.
+  rewrite -ler_pdivr_mull=> //; rewrite mulrA.
   rewrite [z^(-1) * _]mulrC divff=> //; first by rewrite mul1r.
   apply/eqP=> H2; rewrite H2 in Hgt0.
   by move: (ltr0_neq0 Hgt0); move/eqP.
