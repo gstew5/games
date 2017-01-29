@@ -84,10 +84,23 @@ Section CongestionGame.
     y%:Q * (z%:Q + 1) <= 5%:Q/3%:Q * y%:Q^2 + 1%:Q/3%:Q * z%:Q^2.
   Proof. by apply: Christodoulou.result. Qed.
 
-  Lemma asdf (y z : nat) (b : rat) :
+  Lemma christodoulou'_l1 (y z : nat) (b : rat) :
+    0 <= b ->
     b *+ y <= 5%:Q/3%:Q * b *+ y + 1%:Q/3%:Q * b *+ z.
   Proof.
-    (* apply ler_mull2 with (z:= *)
+    move=> H.
+    have ->: (5%:Q / 3%:Q * b *+ y + 1%:Q / 3%:Q * b *+ z =
+              b * (5%:Q / 3%:Q * y%:Q + 1%:Q / 3%:Q * z%:Q)).
+    { rewrite -mulr_natr -mulrnAl -[1%:~R/3%:~R *+ _]mulr_natr.
+      rewrite -mulrA mulrC mulrA.
+      rewrite -[1%:~R/3%:~R*z%:R*b]mulrA [z%:R*b]mulrC.
+      rewrite [1%:~R/3%:~R*_]mulrC -[b * y%:R * 5%:~R / 3%:~R]mulrA.
+      rewrite -[b * y%:R * _]mulrA -[b * z%:R * _]mulrA -mulrDr.
+      admit. (* almost done *)
+    }
+    rewrite -[b *+ _]mulr_natr ler_mull => //.
+    rewrite -[y%:R]addr0. apply ler_add. apply ler_pemull => //.
+    apply ler0n. apply mulr_ge0 => //. apply ler0n.
   Admitted.
 
   Lemma christodoulou' (y z : nat) (a b : rat) :
@@ -159,7 +172,8 @@ Section CongestionGame.
         (aCoeff (costs r) *+ (x r + 1) + bCoeff (costs r)) *+ x' r
      <= 5%:Q/3%:Q * ((aCoeff (costs r) *+ (x' r) + bCoeff (costs r))*+(x' r)) +
         1%:Q/3%:Q * ((aCoeff (costs r) *+ (x r) + bCoeff (costs r))*+(x r)).
-    { move=> r; apply: ler_trans; last by apply: christodoulou'.
+    { move=> r; apply: ler_trans;
+              last by apply: christodoulou'; apply bCoeff_positive.
       rewrite mulrnDl; apply: ler_add.
       { rewrite -mulrnA.
         move: (aCoeff_positive (costs r)).
