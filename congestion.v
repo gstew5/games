@@ -119,24 +119,21 @@ Section CongestionGame.
   Proof.
     move=> Ha Hb.
     have ->: ((a *+ y + b) *+ y = a * y%:Q^2 + b * y%:Q).
-    { by rewrite -mulr_natr -[a *+ y]mulr_natr mulrDl exprSz expr1z mulrA. }
+    { (* weird how this works (mulrC to unfold the square) *)
+      by rewrite [_^2]mulrC -mulr_natr -[a*+_]mulr_natr mulrDl mulrA.
+    (* by rewrite -mulr_natr -[a *+ y]mulr_natr mulrDl exprSz expr1z mulrA. *) }
     have ->: ((a *+ z + b) *+ z = a * z%:Q^2 + b * z%:Q).
     { by rewrite -mulr_natr -[a *+ z]mulr_natr mulrDl exprSz expr1z mulrA. }
     rewrite mulrDr. rewrite mulrDr. rewrite addrA.
     (* Ugly but fast *)
     rewrite [5%:~R/3%:~R*(a*y%:~R^2)+5%:~R/3%:~R*(b*y%:~R)+
              1%:~R/3%:~R*(a*z%:~R^2)+1%:~R/3%:~R*(b*z%:~R)]christodoulou'_l2.
-    apply ler_add.
-    { (* Also ugly but fast and straightforward *)
-      rewrite [a*y%:~R^2]mulrC [a*z%:~R^2]mulrC.
-      rewrite [5%:~R/3%:~R*(y%:~R^2*a)]mulrA.
-      rewrite [1%:~R/3%:~R*(z%:~R^2*a)]mulrA.
-      rewrite [5%:~R/3%:~R*y%:~R^2*a]mulrC.
-      rewrite [1%:~R/3%:~R*z%:~R^2*a]mulrC.
-      rewrite -mulrDr. apply ler_mull => //.
-      apply christodoulou. }
-    apply christodoulou'_l1 => //.
-Qed.
+    apply: ler_add.
+    { rewrite 2![a*_^2]mulrC  [_*(y%:~R^2*a)]mulrA  [_*(z%:~R^2*a)]mulrA.
+      rewrite [_*y%:~R^2*a]mulrC [_*z%:~R^2*a]mulrC -mulrDr.
+      by apply ler_mull, christodoulou. }
+    by apply: christodoulou'_l1.
+  Qed.
 
   Instance resourceLambdaInstance 
     : @LambdaClass [finType of strategy] rat_realFieldType| 0 := 5%:Q/3%:Q.
