@@ -86,29 +86,57 @@ Section CongestionGame.
 
   Lemma christodoulou'_l1 (y z : nat) (b : rat) :
     0 <= b ->
-    b *+ y <= 5%:Q/3%:Q * b *+ y + 1%:Q/3%:Q * b *+ z.
+    b * y%:Q <= 5%:Q/3%:Q * (b * y%:Q) + 1%:Q/3%:Q * (b * z%:Q).
   Proof.
     move=> H.
-    have ->: (5%:Q / 3%:Q * b *+ y + 1%:Q / 3%:Q * b *+ z =
-              b * (5%:Q / 3%:Q * y%:Q + 1%:Q / 3%:Q * z%:Q)).
-    { rewrite -mulr_natr -mulrnAl -[1%:~R/3%:~R *+ _]mulr_natr.
+    have ->: (5%:Q / 3%:Q * (b * y%:Q) + 1%:Q / 3%:Q * (b * z%:Q) =
+              b * (5%:Q/3%:Q * y%:Q + 1%:Q/3%:Q * z%:Q)).
+    { rewrite [b*z%:~R]mulrC.
+      rewrite mulrA. rewrite [1%:~R/3%:~R*(z%:~R*b)]mulrA.
       rewrite -mulrA mulrC mulrA.
       rewrite -[1%:~R/3%:~R*z%:R*b]mulrA [z%:R*b]mulrC.
       rewrite [1%:~R/3%:~R*_]mulrC -[b * y%:R * 5%:~R / 3%:~R]mulrA.
       rewrite -[b * y%:R * _]mulrA -[b * z%:R * _]mulrA -mulrDr.
-      admit. (* almost done *)
-    }
-    rewrite -[b *+ _]mulr_natr ler_mull => //.
-    rewrite -[y%:R]addr0. apply ler_add. apply ler_pemull => //.
+      have H0: (forall a b c, b = c -> a * b = a * c).
+      { by move=> t a b' c ->. }
+      apply H0. by rewrite mulrC [z%:R * _]mulrC. } 
+    rewrite ler_mull => //.
+    rewrite -[y%:~R]addr0. apply ler_add. rewrite addr0.
+    apply ler_pemull => //.
     apply ler0n. apply mulr_ge0 => //. apply ler0n.
-  Admitted.
+  Qed.
+
+  (* Not sure if this exists somewhere. If not, maybe it should be moved
+     somewhere since it's somewhat general *)
+  Lemma christodoulou'_l2 (a b c d : rat) :
+    a + b + c + d = (a + c) + (b + d).
+  Proof. by rewrite -3!addrA [c + (b + d)]addrC -addrA [d + c]addrC. Qed.
 
   Lemma christodoulou' (y z : nat) (a b : rat) :
-    0 <= b ->
+    0 <= a -> 0 <= b ->
     a * (y%:Q * (z%:Q + 1)) + b * y%:Q
     <= 5%:Q/3%:Q * ((a *+ y + b)*+y) + 1%:Q/3%:Q * ((a *+ z + b)*+z).
   Proof.
-  Admitted. (*TODO*)
+    move=> Ha Hb.
+    have ->: ((a *+ y + b) *+ y = a * y%:Q^2 + b * y%:Q).
+    { by rewrite -mulr_natr -[a *+ y]mulr_natr mulrDl exprSz expr1z mulrA. }
+    have ->: ((a *+ z + b) *+ z = a * z%:Q^2 + b * z%:Q).
+    { by rewrite -mulr_natr -[a *+ z]mulr_natr mulrDl exprSz expr1z mulrA. }
+    rewrite mulrDr. rewrite mulrDr. rewrite addrA.
+    (* Ugly but fast *)
+    rewrite [5%:~R/3%:~R*(a*y%:~R^2)+5%:~R/3%:~R*(b*y%:~R)+
+             1%:~R/3%:~R*(a*z%:~R^2)+1%:~R/3%:~R*(b*z%:~R)]christodoulou'_l2.
+    apply ler_add.
+    { (* Also ugly but fast and straightforward *)
+      rewrite [a*y%:~R^2]mulrC [a*z%:~R^2]mulrC.
+      rewrite [5%:~R/3%:~R*(y%:~R^2*a)]mulrA.
+      rewrite [1%:~R/3%:~R*(z%:~R^2*a)]mulrA.
+      rewrite [5%:~R/3%:~R*y%:~R^2*a]mulrC.
+      rewrite [1%:~R/3%:~R*z%:~R^2*a]mulrC.
+      rewrite -mulrDr. apply ler_mull => //.
+      apply christodoulou. }
+    apply christodoulou'_l1 => //.
+Qed.
 
   Instance resourceLambdaInstance 
     : @LambdaClass [finType of strategy] rat_realFieldType| 0 := 5%:Q/3%:Q.
@@ -172,8 +200,10 @@ Section CongestionGame.
         (aCoeff (costs r) *+ (x r + 1) + bCoeff (costs r)) *+ x' r
      <= 5%:Q/3%:Q * ((aCoeff (costs r) *+ (x' r) + bCoeff (costs r))*+(x' r)) +
         1%:Q/3%:Q * ((aCoeff (costs r) *+ (x r) + bCoeff (costs r))*+(x r)).
-    { move=> r; apply: ler_trans;
-              last by apply: christodoulou'; apply bCoeff_positive.
+    { move=> r; apply: ler_trans; last first.
+      apply christodoulou'. apply aCoeff_positive. by apply bCoeff_positive.
+      (* This doesn't work for some reason *)
+        (* last by apply: christodoulou'; apply aCoeff_positive; apply bCoeff_positive. *)
       rewrite mulrnDl; apply: ler_add.
       { rewrite -mulrnA.
         move: (aCoeff_positive (costs r)).
