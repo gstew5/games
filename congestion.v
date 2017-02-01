@@ -148,6 +148,13 @@ Section CongestionGame.
     : @MuAxiomClass [finType of strategy] rat_realFieldType _.
   Proof. by []. Qed.
 
+  Lemma sum_one_term i (t t' : strategy ^ num_players) (r : T) :
+    (\sum_(x < num_players)
+      (if ((if i == x then t' x else t x) r)
+            && (x == i) then 1 else 0))%N =
+    (if (t' i) r then 1 else 0)%N.
+  Proof. by rewrite -big_mkcond big_mkcondl big_pred1_eq eq_refl. Qed.
+
   Lemma resourceSmoothnessAxiom (t t' : (strategy ^ num_players)%type) :
     \sum_(i : 'I_num_players) cost i (upd i t (t' i)) <=
     lambda of [finType of strategy] * Cost t' +
@@ -158,10 +165,73 @@ Section CongestionGame.
     rewrite /mu_val /resourceMuInstance.
     have H2: \sum_(i < num_players)
               cost i [ffun j => if i == j then t' j else t j]
-          <= \sum_r (evalCost r (load t r + 1)) *+ load t' r.
+             <= \sum_r (evalCost r (load t r + 1)) *+ load t' r.
     { rewrite exchange_big /=; apply: ler_sum=> r _.
       rewrite -big_mkcond /= /load.
-      admit. (*TODO*)
+      have H1: (\sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
+                 evalCost r #|[set i0 | [ffun j => if i == j then t' j else t j] i0 r]|
+                <=
+                \sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
+                 evalCost r (#|[set i0 | t i0 r]| + 1)).
+      { apply: ler_sum => i H. apply ler_add. rewrite -mulr_natr. 
+        rewrite -[aCoeff (costs r) *+ (#|[set i0 | (t i0) r]| + 1)]mulr_natr. apply ler_mull.
+        apply aCoeff_positive.
+        rewrite -2!sum1dep_card /=.
+        rewrite natrD.
+        { 
+          have ->: ((\sum_(x < num_players | [ffun j => if i == j then t' j else t j] x r) 1)%N =
+                    ((\sum_(x < num_players | ([ffun j => if i == j then t' j else t j] x r)
+                                                && (x == i)) 1)%N +
+                     (\sum_(x < num_players | ([ffun j => if i == j then t' j else t j] x r)
+                                                && (x != i)) 1)%N)%N).
+          { by rewrite -bigID. }
+          rewrite natrD addrC. apply: ler_add.
+          have ->: ((\sum_(x < num_players | ([ffun j => if i == j then t' j else t j] x r)
+                                               && (x != i)) 1)%N =
+                    (\sum_(x < num_players) if ((if i == x then t' x else t x) r)
+                                                 && (x != i) then 1 else 0)%N).
+          { by rewrite big_mkcond /=; apply congr_big => //; move => i0 _; rewrite ffunE. }
+          have ->: ((\sum_(x < num_players | t x r) 1)%N =
+                    (\sum_(x < num_players) if t x r then 1 else 0)%N).
+          { by rewrite big_mkcond. }
+          rewrite ler_nat. apply leq_sum. move => i0 _.
+          case i_i0: (i == i0).
+              - have ->: ((i0 != i) = false).
+      { by rewrite eq_sym; apply /negPf; rewrite i_i0. }
+      rewrite andbF.
+      case: (t i0 r) => //.
+      { have ->: ((i0 != i) = true).
+        { rewrite eq_sym. apply (introT (P := i != i0)). apply: idP.
+          apply (contraFneq (b := false)). move => H'. rewrite -i_i0  H'.
+          apply: eq_refl => //. by []. }
+        rewrite andbT => //. } 
+        have ->: ((\sum_(x < num_players |
+                         ([ffun j => if i == j then t' j else t j] x r)
+                           && (x == i)) 1)%N =
+                  (\sum_(x < num_players) if (((if i == x then t' x else t x) r)
+                                                && (x == i)) then 1 else 0)%N).
+        { by rewrite big_mkcond;apply: congr_big => //;move => i0 _;rewrite ffunE. }
+        rewrite sum_one_term. case: (t' i r)  => //. }
+        apply lerr. }
+      apply: ler_trans; first by apply H1.
+      move {H1}.
+      have ->: (\sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
+                 evalCost r (#|[set i0 | (t i0) r]| + 1) =
+                \sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
+                 1 * evalCost r (#|[set i0 | (t i0) r]| + 1)).
+      { by apply: congr_big=> // i _; rewrite mul1r. }
+        rewrite -mulr_suml. rewrite -mulr_natr.
+      rewrite mulrC. apply ler_mull. apply evalCost_ge0.
+      have ->: (\sum_(i | [ffun j => if i == j then t' j else t j] i r) 1 =
+                (\sum_(i | [ffun j => if i == j then t' j else t j] i r) 1)%N%:R).
+      { by move => t0; rewrite natr_sum. }
+      rewrite sum1_card /=.      
+      have ->: (#|[pred i | [ffun j => if i == j then t' j else t j] i r]|
+               = #|[pred i | t' i r]|).
+      { by apply eq_card => x; rewrite /in_mem /= ffunE eq_refl. }
+      have ->: (#|[pred i | (t' i) r]| = #|[set i | (t' i) r]|).
+      { apply eq_card => x. rewrite in_set. rewrite /in_mem //. }
+      by apply lerr.
     }
     apply: ler_trans.
     { have <-:
@@ -199,8 +269,6 @@ Section CongestionGame.
         1%:Q/3%:Q * ((aCoeff (costs r) *+ (x r) + bCoeff (costs r))*+(x r)).
     { move=> r; apply: ler_trans; last first.
       apply christodoulou'. apply aCoeff_positive. by apply bCoeff_positive.
-      (* This doesn't work for some reason *)
-        (* last by apply: christodoulou'; apply aCoeff_positive; apply bCoeff_positive. *)
       rewrite mulrnDl; apply: ler_add.
       { rewrite -mulrnA.
         move: (aCoeff_positive (costs r)).
@@ -224,7 +292,7 @@ Section CongestionGame.
     rewrite big_split /= /x /x'.
     rewrite -2!mulr_sumr.
     by rewrite -2!Cost_eq.
-  Admitted. (*TODO*)
+Qed.
 
   Program Instance congestionSmoothAxiomInstance
     : @SmoothnessAxiomClass
