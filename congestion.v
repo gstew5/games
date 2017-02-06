@@ -168,36 +168,44 @@ Section CongestionGame.
              <= \sum_r (evalCost r (load t r + 1)) *+ load t' r.
     { rewrite exchange_big /=; apply: ler_sum=> r _.
       rewrite -big_mkcond /= /load.
-      have H1: (\sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
-                 evalCost r #|[set i0 | [ffun j => if i == j then t' j else t j] i0 r]|
+      have H1: (\sum_(i < num_players |
+                      [ffun j => if i == j then t' j else t j] i r)
+                 evalCost r
+                 #|[set i0 | [ffun j => if i == j then t' j else t j] i0 r]|
                 <=
-                \sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
+                \sum_(i < num_players |
+                      [ffun j => if i == j then t' j else t j] i r)
                  evalCost r (#|[set i0 | t i0 r]| + 1)).
       { apply: ler_sum => i H. apply ler_add. rewrite -mulr_natr. 
-        rewrite -[aCoeff (costs r) *+ (#|[set i0 | (t i0) r]| + 1)]mulr_natr. apply ler_mull.
-        apply aCoeff_positive.
-        rewrite -2!sum1dep_card /=.
-        rewrite natrD.
+        rewrite -[aCoeff (costs r) *+ (#|[set i0 | (t i0) r]| + 1)]mulr_natr.
+        apply ler_mull. apply aCoeff_positive.
+        rewrite -2!sum1dep_card /= natrD.
         { 
-          have ->: ((\sum_(x < num_players | [ffun j => if i == j then t' j else t j] x r) 1)%N =
-                    ((\sum_(x < num_players | ([ffun j => if i == j then t' j else t j] x r)
-                                                && (x == i)) 1)%N +
-                     (\sum_(x < num_players | ([ffun j => if i == j then t' j else t j] x r)
-                                                && (x != i)) 1)%N)%N).
+          have ->: ((\sum_(x < num_players |
+                           [ffun j => if i == j then t' j else t j] x r) 1)%N
+                    = ((\sum_(x < num_players |
+                              ([ffun j => if i == j then t' j else t j] x r)
+                                && (x == i)) 1)%N +
+                       (\sum_(x < num_players |
+                              ([ffun j => if i == j then t' j else t j] x r)
+                                && (x != i)) 1)%N)%N).
           { by rewrite -bigID. }
           rewrite natrD addrC. apply: ler_add.
-          have ->: ((\sum_(x < num_players | ([ffun j => if i == j then t' j else t j] x r)
-                                               && (x != i)) 1)%N =
-                    (\sum_(x < num_players) if ((if i == x then t' x else t x) r)
-                                                 && (x != i) then 1 else 0)%N).
-          { by rewrite big_mkcond /=; apply congr_big => //; move => i0 _; rewrite ffunE. }
+          have ->: ((\sum_(x < num_players |
+                           ([ffun j => if i == j then t' j else t j] x r)
+                             && (x != i)) 1)%N =
+                    (\sum_(x < num_players)
+                      if ((if i == x then t' x else t x) r)
+                           && (x != i) then 1 else 0)%N).
+          { rewrite big_mkcond /=.
+            by apply congr_big => //; move => i0 _; rewrite ffunE. }
           have ->: ((\sum_(x < num_players | t x r) 1)%N =
                     (\sum_(x < num_players) if t x r then 1 else 0)%N).
           { by rewrite big_mkcond. }
           rewrite ler_nat. apply leq_sum. move => i0 _.
           case i_i0: (i == i0).
-              - have ->: ((i0 != i) = false).
-      { by rewrite eq_sym; apply /negPf; rewrite i_i0. }
+          - have ->: ((i0 != i) = false).
+            { by rewrite eq_sym; apply /negPf; rewrite i_i0. }
       rewrite andbF.
       case: (t i0 r) => //.
       { have ->: ((i0 != i) = true).
@@ -208,26 +216,31 @@ Section CongestionGame.
         have ->: ((\sum_(x < num_players |
                          ([ffun j => if i == j then t' j else t j] x r)
                            && (x == i)) 1)%N =
-                  (\sum_(x < num_players) if (((if i == x then t' x else t x) r)
-                                                && (x == i)) then 1 else 0)%N).
-        { by rewrite big_mkcond;apply: congr_big => //;move => i0 _;rewrite ffunE. }
+                  (\sum_(x < num_players)
+                    if (((if i == x then t' x else t x) r)
+                          && (x == i)) then 1 else 0)%N).
+        { rewrite big_mkcond.
+          by apply: congr_big => //;move => i0 _;rewrite ffunE. }
         rewrite sum_one_term. case: (t' i r)  => //. }
         apply lerr. }
       apply: ler_trans; first by apply H1.
       move {H1}.
-      have ->: (\sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
+      have ->: (\sum_(i < num_players |
+                      [ffun j => if i == j then t' j else t j] i r)
                  evalCost r (#|[set i0 | (t i0) r]| + 1) =
-                \sum_(i < num_players | [ffun j => if i == j then t' j else t j] i r)
+                \sum_(i < num_players |
+                      [ffun j => if i == j then t' j else t j] i r)
                  1 * evalCost r (#|[set i0 | (t i0) r]| + 1)).
       { by apply: congr_big=> // i _; rewrite mul1r. }
-        rewrite -mulr_suml. rewrite -mulr_natr.
-      rewrite mulrC. apply ler_mull. apply evalCost_ge0.
+      rewrite -mulr_suml -mulr_natr mulrC.
+      apply ler_mull. apply evalCost_ge0.
       have ->: (\sum_(i | [ffun j => if i == j then t' j else t j] i r) 1 =
-                (\sum_(i | [ffun j => if i == j then t' j else t j] i r) 1)%N%:R).
+                (\sum_(i |
+                       [ffun j => if i == j then t' j else t j] i r) 1)%N%:R).
       { by move => t0; rewrite natr_sum. }
       rewrite sum1_card /=.      
       have ->: (#|[pred i | [ffun j => if i == j then t' j else t j] i r]|
-               = #|[pred i | t' i r]|).
+                = #|[pred i | t' i r]|).
       { by apply eq_card => x; rewrite /in_mem /= ffunE eq_refl. }
       have ->: (#|[pred i | (t' i) r]| = #|[set i | (t' i) r]|).
       { apply eq_card => x. rewrite in_set. rewrite /in_mem //. }
@@ -235,19 +248,19 @@ Section CongestionGame.
     }
     apply: ler_trans.
     { have <-:
+           \sum_(i < num_players)
+           \sum_t0
+           (if [ffun j => if i == j then t' j else t j] i t0
+            then
+              evalCost t0
+                       (load [ffun j => if i == j then t' j else t j] t0)
+            else 0) =
       \sum_(i < num_players)
-      \sum_t0
-         (if [ffun j => if i == j then t' j else t j] i t0
-          then
-           evalCost t0
-             (load [ffun j => if i == j then t' j else t j] t0)
-          else 0) =
-      \sum_(i < num_players)
-      \sum_t0
-         (if [ffun j => if i == j then t' i else t j] i t0
-          then
-           evalCost t0 (load [ffun j => if i == j then t' i else t j] t0)
-          else 0).
+       \sum_t0
+       (if [ffun j => if i == j then t' i else t j] i t0
+        then
+          evalCost t0 (load [ffun j => if i == j then t' i else t j] t0)
+        else 0).
       apply: congr_big => //.
       move => i _.
       apply: congr_big => // i0 _.
