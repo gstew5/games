@@ -224,7 +224,7 @@ Section PriceOfStabilityBound.
       any potential game is at most [A * B]. (For games in which the 
       PNE is unique, this bound gives a bound on the Price of Anarchy
       as well.) *)
-  Lemma POS_bounded (t0 : sT) (PNE_t0 : PNE t0) : POS t0 <= A * B.
+  Lemma POS_bounded (t0 : sT) (PNE_t0 : PNE t0) : POS t0 t0 <= A * B.
   Proof.
     set (tN := Phi_minimizer t0).
     generalize (minimal_Phi_minimizer t0); move/forallP=> HtN.
@@ -244,11 +244,12 @@ Section PriceOfStabilityBound.
     rewrite ler_pdivr_mulr in H3=> //.
     have H8: Phi tN * A <= Phi tStar * A.
     { rewrite GRing.mulrC [Phi tStar * _]GRing.mulrC.
-      apply: ler_mull=> //; by rewrite -H.        
+      apply: ler_mull=> //.
+      by apply/ltrW.
     }
     apply: ler_trans; [apply: H3|].
     apply: ler_trans; [apply: H8|].
     rewrite GRing.mulrC -GRing.mulrA.
-    by apply: ler_mull.
+    by apply: ler_mull; first by apply: ltrW.
   Qed.
 End PriceOfStabilityBound.
