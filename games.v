@@ -217,23 +217,30 @@ Section gameDefs.
   Definition optimal : pred (state N T) :=
     fun t => [forall t0, Cost t <= Cost t0].
 
+  Lemma arg_min_optimal_eq : optimal (arg_min predT Cost t0).
+  Proof.
+    have Hx: predT t0 by [].
+    case: (andP (@arg_minP _ _ predT Cost t0 Hx)) => Hy Hz.
+    apply/forallP => t2; apply: (forallP Hz).
+  Qed.    
+
   (** The Price of Anarchy for game [T] is the ratio of WORST 
       equilibrium social cost to optimal social cost. We want the 
       ratio to be as close to 1 as possible. *)
   Definition POA : rty :=
-    Cost (arg_max PNEb Cost t0) / Cost (arg_min optimal Cost t1).
+    Cost (arg_max PNEb Cost t0) / Cost (arg_min predT Cost t1).
 
   (** The Price of Stability for game [T] is the ratio of BEST
       equilibrium social cost to optimal social cost. We want the 
       ratio to be as close to 1 as possible. *)
   Definition POS : rty :=
-    Cost (arg_min PNEb Cost t0) / Cost (arg_min optimal Cost t1).
+    Cost (arg_min PNEb Cost t0) / Cost (arg_min predT Cost t1).
 
   Lemma POS_le_POA (H1 : PNEb t0) : POS <= POA.
   Proof.
     rewrite /POS /POA.
     move: (min_le_max Cost H1); rewrite /min /max=> H2.
-    case Hx: (Cost (arg_min optimal Cost t1) == 0).
+    case Hx: (Cost (arg_min predT Cost t1) == 0).
     { by move: (eqP Hx) => ->; rewrite invr0 2!mulr0. }
     rewrite ler_pdivr_mulr=> //.
     move: H2 Hx; move: (Cost _)=> x; move: (Cost _)=> y.
@@ -242,7 +249,7 @@ Section gameDefs.
     rewrite {2}H3 mulf_div GRing.mulr1 -GRing.mulrA GRing.divff=> //.
     by rewrite GRing.mulr1.
     by apply/eqP => H4; rewrite H4 eq_refl in H2.
-    move: (Cost_nonneg (arg_min optimal Cost t1)); rewrite le0r; move/orP; case => //.
+    move: (Cost_nonneg (arg_min predT Cost t1)); rewrite le0r; move/orP; case => //.
     by move/eqP => Hy; rewrite Hy eq_refl in Hx. 
   Qed.
   

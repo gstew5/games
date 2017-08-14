@@ -118,14 +118,14 @@ Section SmoothLemmas.
   Lemma smooth_PNE_POA (t0 t1 : state N T) :
     PNE t0 ->
     optimal t1 ->
-    valid_Move (T:=T) (arg_max PNEb Cost t0) (arg_min optimal Cost t1) ->
-    0 < Cost (arg_min optimal Cost t1) -> 
+    valid_Move (T:=T) (arg_max PNEb Cost t0) (arg_min predT Cost t1) ->
+    0 < Cost (arg_min predT Cost t1) -> 
     POA t0 t1 <= lambda of T / (1 - mu of T).
   Proof.
     move/PNEP => Ht0 Hopt Hval Hpos.
     have Hpne: PNE (arg_max PNEb Cost t0).
     { by case: (andP (arg_maxP Cost Ht0)); move/PNEP. }
-    move: (smooth_PNE (t':=arg_min optimal Cost t1) Hpne Hval) => H2.
+    move: (smooth_PNE (t':=arg_min predT Cost t1) Hpne Hval) => H2.
     by rewrite -ler_pdivr_mulr in H2.
   Qed.
   

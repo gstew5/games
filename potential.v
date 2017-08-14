@@ -229,7 +229,7 @@ Section PriceOfStabilityBound.
     set (tN := Phi_minimizer t0).
     generalize (minimal_Phi_minimizer t0); move/forallP=> HtN.
     case: (andP (AB_bound_Phi tN))=> H3 H4; rewrite /POS.
-    set (tStar := arg_min optimal Cost t0).
+    set (tStar := arg_min predT Cost t0).
     move: (HtN tStar)=> H5.
     case: (andP (AB_bound_Phi tStar))=> H6 H7.
     rewrite ler_pdivr_mulr; last by apply: Cost_pos.
