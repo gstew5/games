@@ -460,11 +460,28 @@ Section gameDefs.
    *)
   Definition CCE (d : dist [finType of state N T] rty) : Prop := eCCE 0 d.
 
+  Lemma marginal_unfold (F : {ffun 'I_N -> T} -> rty) i :
+    let P t (p : {ffun 'I_N -> T}) := p i == t in     
+    \sum_(p : [finType of (T * {ffun 'I_N -> T})] | P p.1 p.2) (F p.2) =
+    \sum_(p : {ffun 'I_N -> T}) (F p).
+  Proof.
+    move => P.
+    set (G (x : T) y := F y).
+    have ->:
+      \sum_(p | P p.1 p.2) F p.2 =
+      \sum_(p | predT p.1 && P p.1 p.2) G p.1 p.2 by apply: eq_big.
+    rewrite -pair_big_dep /= /G /P.
+    have ->:
+         \sum_i0 \sum_(j : {ffun 'I_N -> T} | j i == i0) F j =
+    \sum_i0 \sum_(j : {ffun 'I_N -> T} | predT j && (j i == i0)) F j.
+    { by apply: eq_big. }
+    rewrite -partition_big //. 
+  Qed.      
+  
   Lemma sum1_sum (f : state N T -> rty) i :
     \sum_(ti : T) \sum_(t : state N T | [pred tx | tx i == ti] t) f t =
     \sum_t f t.
-  Proof.
-  Admitted.    
+  Proof. by rewrite -(marginal_unfold f i) pair_big_dep //. Qed.
   
   Lemma CE_CCE d : CE d -> CCE d.
   Proof.
