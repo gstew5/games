@@ -210,6 +210,9 @@ Section gameDefs.
   (** The social Cost of a state is the sum of all players' costs. *)
   Definition Cost (t : state N T) : rty := \sum_i (cost i t).
 
+  Lemma Cost_nonneg t : 0 <= Cost t.
+  Proof. by apply: sumr_ge0 => i _; apply: cost_nonneg. Qed.
+  
   (** A state is optimal if its social cost can't be improved. *)
   Definition optimal : pred (state N T) :=
     fun t => [forall t0, Cost t <= Cost t0].
@@ -226,19 +229,21 @@ Section gameDefs.
   Definition POS : rty :=
     Cost (arg_min PNEb Cost t0) / Cost (arg_min optimal Cost t1).
 
-  Lemma POS_le_POA (H1 : PNEb t0) (Hcost : forall t, Cost t > 0) : POS <= POA.
+  Lemma POS_le_POA (H1 : PNEb t0) : POS <= POA.
   Proof.
     rewrite /POS /POA.
     move: (min_le_max Cost H1); rewrite /min /max=> H2.
+    case Hx: (Cost (arg_min optimal Cost t1) == 0).
+    { by move: (eqP Hx) => ->; rewrite invr0 2!mulr0. }
     rewrite ler_pdivr_mulr=> //.
-    move: H2; move: (Cost _)=> x; move: (Cost _)=> y.
-    have Hx: Cost (arg_min optimal Cost t1) != 0.
-    { move: (Hcost (arg_min optimal Cost t1)); rewrite ltr_def.
-      by case/andP=> H2 H3. }
-    move: Hx; move: (Cost _)=> z Hx H2.
+    move: H2 Hx; move: (Cost _)=> x; move: (Cost _)=> y.
+    move: (Cost _)=> z Hx H2.
     have H3: (z = z / 1) by rewrite (GRing.divr1 z).
     rewrite {2}H3 mulf_div GRing.mulr1 -GRing.mulrA GRing.divff=> //.
     by rewrite GRing.mulr1.
+    by apply/eqP => H4; rewrite H4 eq_refl in H2.
+    move: (Cost_nonneg (arg_min optimal Cost t1)); rewrite le0r; move/orP; case => //.
+    by move/eqP => Hy; rewrite Hy eq_refl in Hx. 
   Qed.
   
   (** The expected cost (to player [i]) of a particular distribution
