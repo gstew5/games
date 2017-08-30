@@ -1030,11 +1030,7 @@ Section Z_to_int_lemmas.
   Proof.
     rewrite /Z_to_int.
     case: r.
-    { case: s => //.
-      move => p H; move: (Pos2Z.neg_is_nonpos p).
-      move/Zle_not_lt => H2.
-      move: (Zlt_neg_0 p) => H3.
-      omega. }
+    { case: s => //. }
     { case: s.
       { move => p H.
         move: (Pos2Z.is_pos p) => H2.

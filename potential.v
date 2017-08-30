@@ -123,6 +123,7 @@ Section BestResponseDynamics.
     case=> H0 H1 H2 H3; inversion 1; subst.
     rename H5 into Hmoves.
     rename H6 into H5.
+    rename t'0 into t'.
     have Hx: Phi t' < Phi t.
     { subst t'.
       by apply: (cost_Phi_lt Hmoves).
@@ -135,8 +136,8 @@ Section BestResponseDynamics.
       { apply/eqP.
         by rewrite ltr_eqF.
       }
-      move: H7 H8 H9; rewrite !ler_eqVlt; case/orP; first by move/eqP=> <-.
-      move => H9 _ H10.
+      move: H7 H9; rewrite !ler_eqVlt; case/orP; first by move/eqP=> <-.
+      move => H9 H10.
       have H11: Phi t' < Phi t'.
       { apply: ler_lt_trans.
         apply: H8'.
@@ -150,7 +151,7 @@ Section BestResponseDynamics.
     case: (s t') H6=> //= _.
     rewrite (mem_enum sT _).
     move=> He _; split.
-    { by rewrite -H8 in He; rewrite He. }
+    { by rewrite He. }
     move=> t0; case/orP; first by move/eqP=> <-.
     move=> H6.
     apply: ltrW.
@@ -165,6 +166,7 @@ Section BestResponseDynamics.
   Proof.
     rewrite /halted=> H0; inversion 1; subst.
     move: (H0 i)=> H4.
+    rename t'0 into t'.
     generalize (ltr_le_asym (cost i t') (cost i t)).
     by subst t'; rewrite H3 H4.
   Qed.    
