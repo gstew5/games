@@ -307,18 +307,18 @@ Section CongestionGame.
     by rewrite -2!Cost_eq.
 Qed.
 
-  Program Instance congestionSmoothAxiomInstance
-    : @SmoothnessAxiomClass
-        [finType of strategy]
-        num_players
-        rat_realFieldType
-        _ _ _ _ _ _ _ _.
-  Next Obligation. by apply: resourceSmoothnessAxiom. Qed.
+Program Instance congestionSmoothAxiomInstance
+  : @SmoothnessAxiomClass
+      [finType of strategy]
+      num_players
+      rat_realFieldType
+      _ _ _ _ _ _ _ _.
+Next Obligation. by apply: resourceSmoothnessAxiom. Qed.
 
-  Instance congestionSmoothInstance
-    : @smooth
-        [finType of strategy]
-        num_players
-        rat_realFieldType
-        _ _ _ _ _ _ _ _ _.
+Instance congestionSmoothInstance
+  : @smooth
+      [finType of strategy]
+      num_players
+      rat_realFieldType
+      _ _ _ _ _ _ _ _ _.
 End CongestionGame.
