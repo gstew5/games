@@ -71,14 +71,26 @@ Section expectedValue.
   Variable rty : numDomainType.
   Variable d : dist T rty.
 
+  Definition probOf (p : pred T) :=
+      \sum_(t : T | p t) d t.
+
+  Lemma probOf_xpredT : probOf xpredT = 1.
+  Proof.
+    rewrite /probOf; apply: dist_normalized.
+  Qed.    
+  
   Definition expectedCondValue (f : T -> rty) (p : pred T) :=
-    \sum_(t : T | p t) (d t) * (f t).
+    (\sum_(t : T | p t) (d t) * (f t)) / (probOf p).
 
   Lemma expectedCondValue_mull f p c :
     expectedCondValue (fun t => c * f t) p = c * expectedCondValue f p.
-  Proof.                                               
-    rewrite /expectedCondValue mulr_sumr; apply/congr_big=> //= i _.
-    by rewrite mulrA [d i * c]mulrC -mulrA.
+  Proof.
+    rewrite /expectedCondValue.
+    have ->: \sum_(t | p t) d t * (c * f t)
+           = c * \sum_(t | p t) d t * f t.
+    { rewrite mulr_sumr; apply/congr_big=> //= i _.
+      by rewrite mulrA [d i * c]mulrC -mulrA. }
+    by rewrite mulrA.
   Qed.
 
   Lemma expectedCondValue_linear f g p :
@@ -86,23 +98,30 @@ Section expectedValue.
     expectedCondValue f p + expectedCondValue g p.
   Proof.
     rewrite /expectedCondValue.
-    have H: \sum_(t | p t) d t * (f t + g t) =
-            \sum_(t | p t) (d t * f t + d t * g t).
+    have ->: \sum_(t | p t) d t * (f t + g t) =
+             \sum_(t | p t) (d t * f t + d t * g t).
     { by apply/congr_big=> //= i _; rewrite mulrDr. }
-    by rewrite H -big_split.
+    rewrite 3!mulr_suml -big_split /=; move: (probOf p) => e.
+    apply: congr_big => // i _; rewrite mulrDl //.
   Qed.    
     
   Definition expectedValue (f : T -> rty) :=
-    expectedCondValue f xpredT.
+    \sum_(t : T) (d t) * (f t).
 
+  Lemma expectedValue_expectedCondValue f : 
+    expectedValue f = expectedCondValue f xpredT.
+  Proof.
+    by rewrite /expectedValue /expectedCondValue probOf_xpredT divr1.
+  Qed.
+  
   Lemma expectedValue_mull f c :
     expectedValue (fun t => c * f t) = c * expectedValue f.
-  Proof. by apply: expectedCondValue_mull. Qed.
+  Proof. by rewrite 2!expectedValue_expectedCondValue expectedCondValue_mull. Qed.
 
   Lemma expectedValue_linear f g :
     expectedValue (fun t => f t + g t) =
     expectedValue f + expectedValue g.
-  Proof. by apply: expectedCondValue_linear. Qed.      
+  Proof. by rewrite 3!expectedValue_expectedCondValue expectedCondValue_linear. Qed.      
   
   Lemma expectedValue_const c : expectedValue (fun _ => c) = c.
   Proof.

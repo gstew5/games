@@ -490,24 +490,24 @@ Section gameDefs.
             /expectedCost /expectedCondCost /expectedValue /expectedCondValue.
     move => Hy.
     rewrite addr0.
+    have ->: \sum_t d t * (cost) i t =
+             \sum_ti \sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i t.
+    { by rewrite -(sum1_sum _ i). }
     have Hz:
       \sum_(ti : T) \sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i t <=
       \sum_(ti : T) (\sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i (upd i t t_i')).
     { apply: ler_sum => tx _ //.
       move: (Hy tx t_i') => Hw.
-      apply: ler_trans.
-      { by apply: Hw; move => t <- Hs; apply: H2. }
+(*      apply: ler_trans.
+      { apply: Hw; move => t <- Hs; apply: H2. }
       by rewrite addr0. }
-    have ->: \sum_t d t * (cost) i t =
-             \sum_ti \sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i t.
-    { by rewrite -(sum1_sum _ i). }
     have ->:
       \sum_t d t * (cost) i (((upd i) t) t_i') =
       \sum_ti \sum_(t : state N T | [pred tx | tx i == ti] t)
          d t * (cost) i (((upd i) t) t_i').
     { by rewrite -(sum1_sum _ i). }    
     by apply: Hz.
-  Qed.
+  Qed.*) Admitted.
   
   Lemma CCE_elim (d : dist [finType of state N T] rty) (H1 : CCE d) :
     forall (i : 'I_N) (t_i' : T),
