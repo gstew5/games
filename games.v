@@ -497,17 +497,61 @@ Section gameDefs.
       \sum_(ti : T) \sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i t <=
       \sum_(ti : T) (\sum_(t : state N T | [pred tx | tx i == ti] t) d t * (cost) i (upd i t t_i')).
     { apply: ler_sum => tx _ //.
-      move: (Hy tx t_i') => Hw.
-(*      apply: ler_trans.
-      { apply: Hw; move => t <- Hs; apply: H2. }
-      by rewrite addr0. }
+      move: (Hy tx t_i'); rewrite addrC add0r / probOf => Hz; clear Hy.
+      have Hw:
+        (\sum_(t : state N T | [pred tx0 | tx0 i == tx] t) d t * (cost) i t) /
+        (\sum_(t : state N T | [pred tx0 | tx0 i == tx] t) d t) <=
+        (\sum_(t : state N T | [pred tx0 | tx0 i == tx] t) d t * (cost) i (((upd i) t) t_i')) /
+        (\sum_(t : state N T | [pred tx0 | tx0 i == tx] t) d t).
+      { apply: Hz => t <-; apply: H2. } clear Hz H2.
+      move: Hw; move: [pred tx0 | _] => p.
+      (*TODO: clean up and refactor this proof! *)
+      case Heq: (\sum_(t : state N T | p t) d t == 0).
+      { move: (eqP Heq) => Heq'.
+        have: \sum_(t : state N T | p t) d t * (cost) i t = 0.
+        { set (F t := d t * (cost) i t).
+          have ->: \sum_(t : state N T | p t) d t * (cost) i t
+                 = \sum_(t : state N T| p t) (F t).
+          { apply: congr_big => //. }
+          apply/eqP; rewrite psumr_eq0; last first.
+          { move => ix; rewrite /F => _; apply: mulr_ge0; first by apply: dist_positive.
+            apply: costAxiomClass. }
+          apply/allP => t Hin; apply/implyP => Hp; apply/eqP; rewrite /F.
+          rewrite psumr_eq0 in Heq => //=; last first.
+          { move => ix _; apply: dist_positive. }
+          by move: (allP Heq); move/(_ t)/(_ Hin)/implyP/(_ Hp)/eqP => ->; rewrite mul0r. }
+        have: \sum_(t : state N T | p t) d t * (cost) i (((upd i) t) t_i') = 0.
+        { set (F t := d t * (cost) i (((upd i) t) t_i')).
+          have ->: \sum_(t : state N T | p t) d t * (cost) i (((upd i) t) t_i')
+                 = \sum_(t : state N T| p t) (F t).
+          { apply: congr_big => //. }
+          apply/eqP; rewrite psumr_eq0; last first.
+          { move => ix; rewrite /F => _; apply: mulr_ge0; first by apply: dist_positive.
+            apply: costAxiomClass. }
+          apply/allP => t Hin; apply/implyP => Hp; apply/eqP; rewrite /F.
+          rewrite psumr_eq0 in Heq => //=; last first.
+          { move => ix _; apply: dist_positive. }
+          by move: (allP Heq); move/(_ t)/(_ Hin)/implyP/(_ Hp)/eqP => ->; rewrite mul0r. }
+        move => -> -> //. }
+      (* \sum_(t | p t) d t > 0 *)
+      have Hgt: \sum_(t : state N T | p t) d t > 0.
+      { rewrite ltr_def; apply/andP; rewrite Heq; split => //.
+        apply: sumr_ge0 => ix _; apply: dist_positive. }
+      move: Hgt.
+      move: (\sum_(t : state N T | _) d t * _) => x.
+      move: (\sum_(t : state N T | _) d t * _) => y.      
+      move: (\sum_(t : state N T | _) d t) => r.
+      rewrite mulrC [_ / _]mulrC => H3.
+      by apply: ler_mull2; rewrite invr_gte0. }
+    apply: ler_trans.
+    { apply: Hz; move => t <- Hs; apply: H2. }
     have ->:
       \sum_t d t * (cost) i (((upd i) t) t_i') =
       \sum_ti \sum_(t : state N T | [pred tx | tx i == ti] t)
          d t * (cost) i (((upd i) t) t_i').
     { by rewrite -(sum1_sum _ i). }    
-    by apply: Hz.
-  Qed.*) Admitted.
+    by [].
+  Qed.
   
   Lemma CCE_elim (d : dist [finType of state N T] rty) (H1 : CCE d) :
     forall (i : 'I_N) (t_i' : T),

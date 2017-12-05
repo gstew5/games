@@ -77,8 +77,8 @@ Section expectedValue.
   Lemma probOf_xpredT : probOf xpredT = 1.
   Proof.
     rewrite /probOf; apply: dist_normalized.
-  Qed.    
-  
+  Qed.
+
   Definition expectedCondValue (f : T -> rty) (p : pred T) :=
     (\sum_(t : T | p t) (d t) * (f t)) / (probOf p).
 
