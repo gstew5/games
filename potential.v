@@ -171,7 +171,7 @@ Section BestResponseDynamics.
     by subst t'; rewrite H3 H4.
   Qed.    
 
-  Lemma best_response_safe t : 
+  Lemma better_response_safe t : 
     safe step halted t.
   Proof.    
     move=> t''; induction 1=> //.
@@ -189,18 +189,18 @@ Section BestResponseDynamics.
     by rewrite ltrNge; apply/negP.
   Qed.
   
-  Lemma best_response_everywhere_halts t :
+  Lemma better_response_everywhere_halts t :
     everywhere_halts step halted t.
   Proof.
     apply: (step_everywhere_halts_or_stuck P).
     apply: init_P.
     apply: step_P.
     apply: halted_doesnt_step.
-    apply: best_response_safe.
+    apply: better_response_safe.
   Qed.    
 End BestResponseDynamics.
 
-Print Assumptions best_response_everywhere_halts.
+Print Assumptions better_response_everywhere_halts.
 
 Section PriceOfStabilityBound.
   (** The following section proves a bound on the Price of Stability 
