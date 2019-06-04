@@ -119,14 +119,6 @@ Proof.
   destruct (Pos.compare x y); auto; try solve[inversion 1].
 Qed.  
 
-Lemma Zlt_le x y : (x < y -> x <= y)%Z.
-Proof.
-  unfold Z.le; intros H.
-  generalize (Zlt_compare _ _ H).
-  destruct (Z.compare x y); try solve[inversion 1|auto].
-  intros _; inversion 1.
-Qed.
-
 Lemma Zpow_pos_div x y :
   (y < x)%positive -> 
   (Z.pow_pos 2 x # 1) * / (Z.pow_pos 2 y # 1) == Z.pow_pos 2 (x - y) # 1.
@@ -150,14 +142,14 @@ Proof.
     rewrite 2!Z.pow_pos_fold.
     assert (2 ^ Zpos (x - y) * 2 ^ Zpos y = 2 ^ Zpos x)%Z as ->.
     { assert (Zpos (x - y) = (Zpos x - Zpos y)%Z) as ->.
-      { rewrite <-Z_pos_sub_gt.
+      { rewrite <-Z.pos_sub_gt.
         { rewrite <-Pos2Z.add_pos_neg.
           unfold Z.sub; auto. }
-        rewrite Pos.gt_lt_iff; auto. }
+        rewrite ?Pos.gt_lt_iff; auto. }
       assert (Hbounds : (0 <= Zpos y <= Zpos x)%Z).
       { split.
         { apply Pos2Z.is_nonneg. }
-        apply Zlt_le.
+        apply Z.lt_le_incl.
         apply Pos_lt_Zpos_Zlt; auto. }
       rewrite Z.pow_sub_r; auto; [|inversion 1].
       rewrite <-Z.shiftr_div_pow2; [|apply Pos2Z.is_nonneg].
@@ -172,10 +164,10 @@ Proof.
   { inversion 1. }
   split.
   { apply Pos2Z.is_nonneg. }
-  unfold Zle, Z.compare; rewrite H; inversion 1. 
+  unfold Z.le, Z.compare; rewrite H; inversion 1.
   split.
   { apply Pos2Z.is_nonneg. }
-  unfold Zle, Z.compare; rewrite H; inversion 1. 
+  unfold Z.le, Z.compare; rewrite H; inversion 1.
 Qed.
 
 Lemma Qinv_neq (n : Q) : ~0 == n -> ~0 == / n.
@@ -454,7 +446,7 @@ Qed.
 Lemma Deq_dec (d1 d2 : D) : {d1=d2} + {d1<>d2}.
 Proof.
   destruct d1, d2.
-  destruct (Z_eq_dec num0 num1).
+  destruct (Z.eq_dec num0 num1).
   { destruct (positive_eq_dec den0 den1).
     left; subst; f_equal.
     right; inversion 1; subst; apply n; auto. }
@@ -613,7 +605,7 @@ Proof.
   omega.
 Qed.  
 
-Lemma Pos2Nat_inj_2 : Pos.to_nat 2 = 2.
+Lemma Pos2Nat_inj_2 : Pos.to_nat 2 = 2%nat.
 Proof. unfold Pos.to_nat; simpl; auto. Qed.
 
 Lemma Pos_le_2_add_sub x : 
@@ -661,7 +653,7 @@ Proof.
     rewrite Pos2Nat.inj_le in H, H0.
     rewrite Pos2Nat.inj_1 in H.
     rewrite Pos2Nat_inj_2 in H0|-*.
-    assert (H1: Pos.to_nat x <> 2).
+    assert (H1: Pos.to_nat x <> 2%nat).
     { intros Hx.
       rewrite <-Pos2Nat.inj_iff, Hx in n0.
       auto. }
@@ -753,7 +745,7 @@ Proof.
   unfold Plub_aux.
   assert (H : (x <= Z.pow_pos 2 (Zsize x))%Z).
   { apply Zpow_pos_size_le. }
-  eapply Zle_trans; [apply H|].
+  eapply Z.le_trans; [apply H|].
   rewrite <-!two_power_pos_correct.
   apply two_power_pos_le.
   rewrite Pos2Nat.inj_le; generalize (Zsize x) as z; intro.

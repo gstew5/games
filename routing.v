@@ -129,7 +129,7 @@ Section AtomicRoutingGame.
     : MovesClass num_players [finType of strategy_pkg]
     := movesFun.
 
-  Instance gameInstance : game costAxiomInstance movesInstance.
+  Instance gameInstance : game costAxiomInstance movesInstance := {}.
   
   Definition phiFun (s : st) : rty :=
     \sum_(x : 'I_#|T|)
@@ -342,16 +342,5 @@ Section AtomicRoutingGame.
   Qed.
     
   Instance PhiAxiomInstance : PhiAxiomClass phiInstance := phi_exact.
-  Instance AtomicPotentialInstance : Potential PhiAxiomInstance. 
-End AtomicRoutingGame.  
-
-  
-  
-      
-  
-  
-  
-  
-  
-  
-                             
+  Instance AtomicPotentialInstance : Potential PhiAxiomInstance := {}.
+End AtomicRoutingGame.

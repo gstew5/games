@@ -308,15 +308,15 @@ Proof.
 Qed.
 
 Lemma Zneg_Zlt r s :
-  Pos.gt r s -> 
-  Zlt (Zneg r) (Zneg s).
+  Pos.gt r s ->
+  Z.lt (Zneg r) (Zneg s).
 Proof.
   rewrite /Pos.gt.
   by rewrite /Z.lt /= => ->.
 Qed.  
 
 Lemma Zlt_Zneg r s :
-  Zlt (Zneg r) (Zneg s) ->
+  Z.lt (Zneg r) (Zneg s) ->
   Pos.gt r s.
 Proof.
   rewrite /Pos.gt.
@@ -334,7 +334,7 @@ Qed.
 
 Lemma Zneg_Zle r s :
   Pos.ge r s -> 
-  Zle (Zneg r) (Zneg s).
+  Z.le (Zneg r) (Zneg s).
 Proof.
   rewrite /Pos.ge /Z.le /= => H; rewrite /CompOpp.
   by move: H; case: (r ?= s)%positive.
@@ -342,7 +342,7 @@ Qed.
 
 Lemma int_to_Z_lt (s r : int) :
   ltr s r ->
-  Zlt (int_to_Z s) (int_to_Z r).
+  Z.lt (int_to_Z s) (int_to_Z r).
 Proof.
   case: s=> sn; case: r=> rn //.
   { simpl.
@@ -371,7 +371,7 @@ Proof.
 Qed.  
 
 Lemma lt_int_to_Z (s r : int) :
-  Zlt (int_to_Z s) (int_to_Z r) ->
+  Z.lt (int_to_Z s) (int_to_Z r) ->
   ltr s r.  
 Proof.
   case: s=> sn; case: r=> rn //.
@@ -394,7 +394,7 @@ Qed.
 
 Lemma int_to_Z_le (s r : int) :
   ler s r ->
-  Zle (int_to_Z s) (int_to_Z r).
+  Z.le (int_to_Z s) (int_to_Z r).
 Proof.
   case: s=> sn; case: r=> rn //.
   { simpl.
@@ -469,14 +469,14 @@ Section rat_to_Q_lemmas.
     rewrite /int_to_Z.
     case a=>n; case b=>n0; move => H.
     apply Nat2Z.inj_iff in H. auto.
-    have H1: (Zle 0 (Z.of_nat n)).
+    have H1: (Z.le 0 (Z.of_nat n)).
     { apply Nat2Z.is_nonneg. }
-    have H2: (Zlt (Z.neg (Pos.of_succ_nat n0)) 0).
+    have H2: (Z.lt (Z.neg (Pos.of_succ_nat n0)) 0).
     { apply Zlt_neg_0. }
     omega.
-    have H1: (Zle 0 (Z.of_nat n0)).
+    have H1: (Z.le 0 (Z.of_nat n0)).
     { apply Nat2Z.is_nonneg. }
-    have H2: (Zlt (Z.neg (Pos.of_succ_nat n)) 0).
+    have H2: (Z.lt (Z.neg (Pos.of_succ_nat n)) 0).
     { apply Zlt_neg_0. }
     omega.
     inversion H. apply SuccNat2Pos.inj_iff in H1. auto.
@@ -488,10 +488,10 @@ Section rat_to_Q_lemmas.
     split. apply: int_to_Z_inj. move => H. by rewrite H. Qed.
 
   Lemma int_to_Z_opp (i : int) :
-    int_to_Z (- i) = Zopp (int_to_Z i).
+    int_to_Z (- i) = Z.opp (int_to_Z i).
   Proof.
     have ->: - i = -1 * i by rewrite mulNr mul1r.
-    have ->: (Zopp (int_to_Z i) = Zmult (Zneg xH) (int_to_Z i)).
+    have ->: (Z.opp (int_to_Z i) = Zmult (Zneg xH) (int_to_Z i)).
     { by rewrite Z.opp_eq_mul_m1 Z.mul_comm. }
     rewrite -int_to_Z_mul. f_equal.
   Qed.
@@ -1014,9 +1014,9 @@ Section Z_to_int_lemmas.
 
   (** This lemma should be in the standard library... *)
   Lemma Zneg_Zle' (r s : positive) :
-    (Zle (Z.neg r) (Z.neg s))%Z -> (r >= s)%positive.
+    (Z.le (Z.neg r) (Z.neg s))%Z -> (r >= s)%positive.
   Proof.
-    rewrite /Zle /Zcompare /CompOpp.
+    rewrite /Z.le /Z.compare /CompOpp.
     case H: (r ?= s)%positive => //.
     { move => _; move: H.
       rewrite Pos.compare_eq_iff => ->.
@@ -1027,7 +1027,7 @@ Section Z_to_int_lemmas.
   Qed.    
 
   Lemma Z_to_int_le (r s : Z) :
-    Zle r s -> (Z_to_int r <= Z_to_int s)%R.
+    Z.le r s -> (Z_to_int r <= Z_to_int s)%R.
   Proof.
     rewrite /Z_to_int.
     case: r.
@@ -1037,7 +1037,7 @@ Section Z_to_int_lemmas.
         move: (Pos2Z.is_pos p) => H2.
         omega. }
       { move => p q.
-        rewrite /Zle -(Pos2Z.inj_compare q p) Pos.compare_le_iff Pos2Nat.inj_le.
+        rewrite /Z.le -(Pos2Z.inj_compare q p) Pos.compare_le_iff Pos2Nat.inj_le.
         move/leP => //. }
       move => p q; move: (Zle_neg_pos p q); move/Zle_not_lt => H H2.
       have H3: Z.pos q <> Z.neg p by discriminate.
@@ -1051,7 +1051,7 @@ Section Z_to_int_lemmas.
   Qed.
 
   Lemma Z_to_int_opp r :
-    Z_to_int (Zopp r) = (- Z_to_int r)%R.
+    Z_to_int (Z.opp r) = (- Z_to_int r)%R.
   Proof. by rewrite Z.opp_eq_mul_m1 Z_to_int_mul /= NegzE mulrC mulN1r. Qed.
 End Z_to_int_lemmas.
       

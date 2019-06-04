@@ -113,8 +113,8 @@ Instance negative_cost_game_of_payoff_game
          `(_ : payoff_game T N rty)
   : negative_cost_game _ _ :=
   Build_negative_cost_game
-    (negativeCostAxiomInstance_of_payoffAxiomInstance
-       N rty T payoffAxiomClass)
+    (@negativeCostAxiomInstance_of_payoffAxiomInstance
+       N rty T _ payoffAxiomClass)
     _. (* payoffAxiomClass is an auto-generated name
           from using the ` thing *)
 
