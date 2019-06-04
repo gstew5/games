@@ -1,23 +1,17 @@
+[![Build Status](https://travis-ci.com/gstew5/games.svg?branch=master)](https://travis-ci.com/gstew5/games)
 # A Library for Algorithmic Game Theory in Ssreflect/Coq
 
-# PREREQUISITES
+# Prerequisites
 
-* Coq 8.6
-* Ssreflect 1.6.1
+* `coq` `>= 8.7`
+* `coq-mathcomp-algebra` `1.9.0`
 
-Alternatively, in OPAM, make sure you've installed the following packages:
-
-```
-coq                            8.6  Formal proof management system.
-coq-mathcomp-algebra         1.6.1  Mathematical Components Library on Algebra
-coq-mathcomp-fingroup        1.6.1  Mathematical Components Library on finite groups
-coq-mathcomp-ssreflect       1.6.1  Small Scale Reflection
-```
-
-# BUILD
+# Build
 
 Just type
 
-```make```
+```bash
+make && make install
+```
 
 in the top-level project directory.
