@@ -842,6 +842,7 @@ Section rat_to_R_lemmas.
     rewrite /Qeq in H. simpl in H.
     ring_simplify in H.
     induction r1 => //.
+    by apply/eqP/int_to_Z_inj; rewrite H.
   Qed.
 
   Lemma rat_to_R_inv (r : rat) : (r != 0) -> rat_to_R r^-1 = Rinv (rat_to_R r).
@@ -1160,13 +1161,11 @@ Section rat_to_Q_lemmas_cont.
   Local Open Scope ring_scope.
   Delimit Scope R with R_ssr.  
   Delimit Scope R_scope with R.
-  
+
   Lemma cancel_Z2I x : Z_to_int (int_to_Z x) = x.
   Proof.
-    induction x => //=;
-      first by rewrite SuccNat2Pos.id_succ => //.
-    rewrite opp_posz_negz SuccNat2Pos.id_succ.
-    f_equal.
+    induction x => //=; last by rewrite SuccNat2Pos.id_succ.
+    by case: n =>//= n; rewrite SuccNat2Pos.id_succ.
   Qed.
 
   Lemma cancel_I2Z x : int_to_Z (Z_to_int x) = x.
@@ -1545,7 +1544,7 @@ Proof. apply: (projT2 (projT2 d)). Qed.
 Lemma nat_of_bin_succ n : nat_of_bin (N.succ n) = (nat_of_bin n).+1.
 Proof.
   elim: n => //= p.
-  by rewrite nat_of_succ_gt0.
+  by rewrite nat_of_succ_pos.
 Qed.
 
 Lemma nat_of_bin0 : nat_of_bin 0 = 0%nat.
@@ -1559,7 +1558,7 @@ Proof.
   { by exists O. }
   move => p'; rewrite /P => [][]n IH.
   exists n.+1.
-  by rewrite nat_of_succ_gt0 IH.
+  by rewrite nat_of_succ_pos IH.
 Qed.    
 
 Lemma nat_of_pos_inj p1 p2 : nat_of_pos p1 = nat_of_pos p2 -> p1=p2.
@@ -1573,17 +1572,17 @@ Proof.
     change (Q p2).
     apply: Pos.peano_ind => //.
     move => p'; rewrite /Q => IH.
-    rewrite nat_of_succ_gt0 => //.
+    rewrite nat_of_succ_pos => //.
     case: (nat_of_pos_s p') => x -> //. }
   move => p1 IH p2.
-  rewrite nat_of_succ_gt0.
+  rewrite nat_of_succ_pos.
   set (Q p2 := (nat_of_pos p1).+1 = nat_of_pos p2 -> Pos.succ p1 = p2).
   change (Q p2).
   apply: Pos.peano_ind.
   { rewrite /Q.
     case: (nat_of_pos_s p1) => x -> //. }
   move => p; rewrite /Q => IH2.
-  rewrite nat_of_succ_gt0; case => H.
+  rewrite nat_of_succ_pos; case => H.
   by rewrite (IH _ H).
 Qed.
 

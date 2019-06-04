@@ -112,7 +112,7 @@ Qed.
 
 Lemma Pos_lt_Zpos_Zlt x y :  
   (x < y)%positive -> 
-  (' x < ' y)%Z.
+  (Zpos x < Zpos y)%Z.
 Proof.
   unfold Z.lt; simpl; rewrite <-Pos.ltb_lt.
   rewrite Pos.ltb_compare.
@@ -148,13 +148,13 @@ Proof.
     unfold Qeq; simpl; rewrite <-H1.
     rewrite Z.pos_sub_gt; auto.
     rewrite 2!Z.pow_pos_fold.
-    assert (2 ^ ' (x - y) * 2 ^ ' y = 2 ^ ' x)%Z as ->.
+    assert (2 ^ Zpos (x - y) * 2 ^ Zpos y = 2 ^ Zpos x)%Z as ->.
     { assert (Zpos (x - y) = (Zpos x - Zpos y)%Z) as ->.
       { rewrite <-Z_pos_sub_gt.
         { rewrite <-Pos2Z.add_pos_neg.
           unfold Z.sub; auto. }
         rewrite Pos.gt_lt_iff; auto. }
-      assert (Hbounds : (0 <= ' y <= ' x)%Z).
+      assert (Hbounds : (0 <= Zpos y <= Zpos x)%Z).
       { split.
         { apply Pos2Z.is_nonneg. }
         apply Zlt_le.
@@ -220,21 +220,21 @@ Qed.
 
 Lemma Zmult_pow_plus x y r :
   (r <> 0)%Z -> 
-  x * inject_Z (Z.pow r ('y)) / inject_Z (Z.pow r ('y+'y)) ==
-  x / inject_Z (Z.pow r ('y)).
+  x * inject_Z (Z.pow r (Zpos y)) / inject_Z (Z.pow r (Zpos y+Zpos y)) ==
+  x / inject_Z (Z.pow r (Zpos y)).
 Proof.
   intros H; unfold inject_Z.
-  assert (Hy: (' y >= 0)%Z).
+  assert (Hy: (Zpos y >= 0)%Z).
   { generalize (Pos2Z.is_nonneg y).
     unfold Z.le, Z.ge; intros H2 H3.
-    destruct (Zle_compare 0 ('y)); auto. }
+    destruct (Zle_compare 0 (Zpos y)); auto. }
   rewrite Zpower_exp; auto.
   unfold Qdiv.
   rewrite <-Qmult_assoc.
-  assert (r^('y) * r^('y) # 1 == (r^('y)#1) * (r^('y)#1)) as ->.
+  assert (r^(Zpos y) * r^(Zpos y) # 1 == (r^(Zpos y)#1) * (r^(Zpos y)#1)) as ->.
   { unfold Qmult; simpl; apply Qeq_refl. }
   rewrite Qinv_mult_distr.
-  rewrite (Qmult_assoc (r^('y)#1)).
+  rewrite (Qmult_assoc (r^(Zpos y)#1)).
   rewrite Qmult_inv_r, Qmult_1_l.
   { apply Qeq_refl. }
   apply Qmake_neq_0; intros H2.
@@ -297,7 +297,7 @@ Proof.
       rewrite Qmult_1_r; apply Qeq_refl. }
     unfold D_to_Q; simpl.
     rewrite <-inject_Z_mult, <-inject_Z_plus.
-    assert (Z.pow_pos 2 Z = Z.pow_pos 2 Z * ' 1)%Z as ->.
+    assert (Z.pow_pos 2 Z = Z.pow_pos 2 Z * Zpos 1)%Z as ->.
     { rewrite Zmult_1_r; auto. }
     rewrite <-shift_pos_correct, <-Qmake_Qdiv.
     rewrite Zmult_comm; apply Qeq_refl; auto.
@@ -343,7 +343,7 @@ Proof.
       rewrite Qmult_1_r; apply Qeq_refl. }
     unfold D_to_Q; simpl.
     rewrite <-inject_Z_mult, <-inject_Z_plus.
-    assert (Z.pow_pos 2 X = Z.pow_pos 2 X * ' 1)%Z as ->.
+    assert (Z.pow_pos 2 X = Z.pow_pos 2 X * Zpos 1)%Z as ->.
     { rewrite Zmult_1_r; auto. }
     rewrite <-shift_pos_correct, <-Qmake_Qdiv.
     rewrite Zmult_comm, Z.add_comm; apply Qeq_refl.
@@ -522,7 +522,7 @@ Definition Dlub (max : D) : D :=
   end.
 
 Lemma Zpos_2_mult (x : Z) (y : positive) :
-  (x <= 'y)%Z -> (x * 2 <= 'y~0)%Z.
+  (x <= Zpos y)%Z -> (x * 2 <= Zpos y~0)%Z.
 Proof.
   intros H.
   rewrite Zmult_comm.
