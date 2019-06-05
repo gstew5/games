@@ -1,15 +1,17 @@
 Set Implicit Arguments.
 Unset Strict Implicit.
 
+Require Import QArith.
+
 Require Import mathcomp.ssreflect.ssreflect.
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
 
 Import GRing.Theory Num.Theory Num.Def.
-Require Import QArith.
 
 Require Import games.
 
+Local Open Scope nat_scope.
 Local Open Scope ring_scope.
 
 Module Christodoulou.

@@ -70,7 +70,7 @@ Section CongestionGame.
     : MovesClass num_players [finType of strategy]
     := movesFun.
 
-  Instance gameInstance : game costAxiomInstance movesInstance.
+  Instance gameInstance : game costAxiomInstance movesInstance := {}.
 
   Lemma Cost_eq (s : (strategy ^ num_players)) :
     Cost s = \sum_t (evalCost t (load s t)) *+ load s t.
@@ -320,5 +320,6 @@ Instance congestionSmoothInstance
       [finType of strategy]
       num_players
       rat_realFieldType
-      _ _ _ _ _ _ _ _ _.
+      _ _ _ _ _ _ _ _ _
+  := {}.
 End CongestionGame.
