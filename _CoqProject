@@ -2,6 +2,7 @@
 
 dyadic.v
 numerics.v
+general.v
 dist.v
 extrema.v
 games.v

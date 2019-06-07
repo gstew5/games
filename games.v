@@ -7,7 +7,7 @@ From mathcomp Require Import all_algebra.
 
 Import GRing.Theory Num.Def Num.Theory.
 
-Require Import extrema dist.
+Require Import extrema general dist.
 
 Local Open Scope ring_scope.
 
@@ -570,3 +570,420 @@ Section gameDefs.
   Lemma CCEP d : reflect (CCE d) (CCEb d).
   Proof. apply: eCCEP. Qed.
 End gameDefs.
+
+Section PNE_implies_MNE.
+  Context {T} {N} `(gameAxiomClassA : game T N) {t0:T}.
+
+  (** Product with a zero is equal to 0 *)
+  (*  May be much more general *)
+  Lemma exists0_prod0:
+    forall (f : 'I_N -> rty),
+    (exists i0:'I_N, (f i0 = 0)%R) -> (\prod_(i < N) f i)%R = 0%R.
+  Proof.
+  move=> f Hexists.
+  have [i Hi] := Hexists.
+  rewrite (bigD1 i) => //=.
+    by rewrite Hi mul0r.
+  Qed.
+
+
+  (** State equality = vector equality *)
+  (*  May be much more general *)
+  Lemma eq_stateE:
+    forall (t st : state N T),
+    t == st <-> (forall i : 'I_N, t i == st i).
+  Proof.
+  move=>t st.
+  split; move=> Hst.
+  { move/eqP/ffunP in Hst.
+    move=>i.
+      by rewrite Hst.
+  }
+  { apply/eqP/ffunP.
+    move=>i.
+    apply/eqP.
+      by rewrite Hst.
+  }
+  Qed.
+
+  Lemma eq_stateP:
+    forall (t st : state N T),
+    reflect (t == st)
+            [forall i : 'I_N, t i == st i].
+  Proof.
+  move=>t st.
+  apply/iffP.
+  + by apply forallP.
+  + by rewrite -eq_stateE.
+  + by rewrite -eq_stateE.
+  Qed.
+
+
+  (** State inequality == vector inequality *)
+  (*  May be much more general *)
+  Lemma neq_stateE:
+    forall (t st : state N T),
+    t != st <-> (exists i: 'I_N, t i != st i).
+  Proof.
+  move=>t st.
+  split.
+  + move/negP.
+    move/eq_stateP.
+      by apply/existsP.
+  + move=> Hexi.
+      by apply/negP/eq_stateP/existsP.
+  Qed.
+
+
+  Lemma neq_stateP:
+    forall (t st : state N T),
+    reflect [exists i : 'I_N, t i != st i]
+            (t != st).
+  Proof.
+  move=> t st.
+  case (boolP (t != st)) => /= Ht; constructor.
+  + by apply/existsP; move: Ht; rewrite neq_stateE.
+  + apply/negP.
+    rewrite negb_exists.
+    apply/forallP => x.
+    apply/negP.
+    move: Ht.
+    move/negP.
+    apply/impliesPn.
+    apply Implies => Htx.
+    rewrite neq_stateE.
+      by exists x.
+  Qed.
+
+
+  (** Dirac probability distribution == Dirac delta function *)
+  (* Could be generalized *)
+  Definition dirac_dist (st : state N T) (n : 'I_N) :
+    {ffun T -> rty } :=
+    finfun (fun (x:T)=> if x == (st n) then 1%R else 0%R).
+
+
+  (** Equal to one when evaluated with (st n) *)
+  Lemma dirac_dist_eq1R:
+    forall (st : state N T) (n : 'I_N),
+    (dirac_dist st n) (st n) = 1%R.
+  Proof.
+      by move=>st n; rewrite /dirac_dist ffunE eqxx.
+  Qed.
+
+
+  (** Equal to zero when evaluated with x != (st n) *)
+  Lemma dirac_dist_eq0R:
+    forall (st:state N T) (n : 'I_N) (x : T),
+    x != st n -> (dirac_dist st n) x = 0%R.
+  Proof.
+  move=>st n x IHx.
+  rewrite /dirac_dist ffunE ifN_eq; by auto.
+  Qed.
+
+
+  Lemma dirac_dist_sum_eq0R:
+    forall (st : state N T) (n : 'I_N) ,
+    (\sum_(i | i != st n) (dirac_dist st n) i)%R = 0%R.
+  Proof.
+  move=>st n.
+  transitivity (\sum_(i in T | i != st n) (0:rty))%R.
+  + apply: eq_bigr.
+      by apply: dirac_dist_eq0R.
+  + rewrite big_const iter_add_const.
+      by rewrite mul0rn.
+  Qed.
+
+
+  (** Distribution axiom : any >= 0 /\ sum = 1 *)
+  Lemma dirac_dist_axiom (st : state N T) (n : 'I_N) :
+    dist_axiom (dirac_dist st n).
+  Proof.
+  rewrite /dist_axiom.
+  apply/andP.
+  split.
+  + apply/eqP.
+    rewrite (bigD1 (st n)) => //=.
+      by rewrite dirac_dist_eq1R dirac_dist_sum_eq0R addr0.
+  + apply/forallP.
+    move=> t.
+    rewrite /dirac_dist ffunE.
+      by case (t == st n) => //=;  rewrite ler01.
+  Qed.
+
+
+  (** Dirac distribution = Dirac delta function *)
+  Definition diracDist st n : dist T rty :=
+    mkDist (dirac_dist_axiom st n).
+
+  (** Only 'st' is in Dirac_dist's support *)
+  (*  -> useful for moves_t_eq_st lemma *)
+  Lemma in_support_ddistP:
+    forall (t st : state N T),
+    reflect
+    (t \in support (prod_dist [ffun x => diracDist st x]))
+    (t == st).
+  Proof.
+  move=>t st.
+  case (boolP (t == st)) => Ht //=.
+  { constructor.
+    apply/supportP.
+    rewrite /prod_dist /prod_pmf ffunE.
+    rewrite (eq_big xpredT (fun x => diracDist st x (t x))) => //=.
+    + move/eqP in Ht.
+      rewrite Ht (eq_big xpredT (fun _ => 1%R)) => //=.
+      - by rewrite prod_eq1 ltr01.
+      - move=> i Htrue.
+          by rewrite dirac_dist_eq1R.
+    + move=>i Htrue.
+        by rewrite ffunE.
+  }
+  { constructor.
+    apply/supportP.
+    rewrite /prod_dist /prod_pmf ffunE.
+    rewrite exists0_prod0.
+    + by rewrite ltrr.
+    + have th: (exists i0 : 'I_N, t i0 != st i0) by rewrite -neq_stateE.
+      move: th.
+      case => i Hexists //=.
+      exists i.
+      rewrite ffunE /diracDist => //=.
+        by rewrite dirac_dist_eq0R.
+  }
+  Qed.
+
+  Lemma in_support_ddistE:
+    forall (t st : state N T),
+    (t \in support (prod_dist [ffun x => diracDist st x]))
+    <->
+    (t == st).
+  Proof.
+  move=>t st.
+    by split; move/in_support_ddistP.
+  Qed.
+
+
+  (** A product of Dirac distributions is equal to one when evaluated
+      with 'st' *)
+  Lemma prod_ddist_eq1:
+    forall (st : state N T),
+    (prod_pmf [ffun x => diracDist st x]) st = 1%R.
+  Proof.
+  move=> st.
+  rewrite /prod_pmf ffunE.
+  rewrite (eq_big xpredT (fun x => diracDist st x (st x))) => //=.
+  { rewrite /diracDist /dirac_dist => //=.
+    rewrite (eq_big xpredT (fun x => 1%R)) => //=.
+    + by rewrite prod_eq1.
+    + by move=>i Htrue; rewrite ffunE eqxx.
+  }
+  {
+      by move=>i Htrue; rewrite ffunE.
+  }
+  Qed.
+
+
+  (** A product of Dirac distributions is equal to zero when evaluated
+      with x != st *)
+  Lemma prod_ddist_eq0:
+    forall (t st : state N T),
+    t != st ->
+    (prod_pmf [ffun x => diracDist st x]) t = 0%R.
+  Proof.
+  move=> t st Ht.
+  rewrite /prod_pmf ffunE.
+  rewrite (eq_big xpredT (fun x=> diracDist st x (t x))) =>//=.
+  + rewrite exists0_prod0 => //=.
+    have th: (exists i0 : 'I_N, t i0 != st i0) by rewrite -neq_stateE.
+    move: th.
+    case => i Hexists //=.
+    exists i.
+      by rewrite dirac_dist_eq0R.
+  + move=>i Htrue.
+      by rewrite ffunE.
+  Qed.
+
+
+  (** Condition for PNE and MNE are equal when we use diracDist st*)
+  Lemma moves_t_eq_st:
+    forall (st : state N T) (i : 'I_N) (t_i' : T),
+    (forall t : state N T,
+      t i = st i ->
+      t \in support (prod_dist [ffun x => diracDist st x]) ->
+      (moves) i (st i) t_i')
+    <->
+    (moves) i (st i) t_i'.
+  Proof.
+  move=> st i t_i'.
+  split.
+  { move/(_ st erefl).
+    rewrite in_support_ddistE eqxx; exact.
+  }
+  done.
+  Qed.
+
+
+  (** Sub-proof for:
+      - prod_ddist_eccost_eq_cost
+      - prod_ddist_euccost_eq_costupd *)
+  (* TODO: shorten or subdivide proof *)
+  Lemma _prod_ddist_cost_eqcost:
+    forall (st : state N T) (i : 'I_N) a_cost,
+    ((\sum_(t : state N T | [pred tx | tx i == st i] t)
+       (prod_dist [ffun x => diracDist st x]) t * a_cost t)
+     /
+     probOf
+     (prod_dist [ffun x => diracDist st x])
+     [pred tx : state N T | tx i == st i])%R
+    =
+    a_cost st.
+  Proof.
+  move=> st i a_cost.
+  rewrite (bigD1 (st)) => //=.
+  rewrite prod_ddist_eq1.
+  have th2:
+    (\sum_(t : state N T | (t i == st i) && (t != st))
+     (prod_pmf [ffun x => diracDist st x]) t * (a_cost t)
+    =
+    0)%R.
+  { transitivity (\sum_(t:state N T | (t i == st i) && (t != st))
+                   (0:rty))%R.
+    + rewrite big_mkcond => //=.
+      rewrite (eq_big xpredT (fun _ => 0%R)) => //=.
+      - by rewrite sum_eq0 sum_pred_eq0.
+      - move=> t Htrue.
+        case (boolP (t i == st i)) => Hti //=.
+        case (boolP (t != st)) => Ht //=.
+        rewrite prod_ddist_eq0.
+          by rewrite mulrC mulr0.
+          by rewrite Ht.
+    + by rewrite sum_pred_eq0.
+  }
+  rewrite th2.
+  have th3: (probOf (prod_dist [ffun x => diracDist st x])
+                    [pred tx : state N T | tx i == st i])%R
+             =
+             1%R.
+  { rewrite /probOf.
+    rewrite (bigD1 st) => //=.
+    + rewrite prod_ddist_eq1 (eq_bigr (fun _ => 0%R)).
+        by rewrite sum_pred_eq0 addr0.
+    + move=>t.
+      case (t i == st i) => //= Ht.
+        by rewrite prod_ddist_eq0 => //=.
+  }
+  rewrite th3.
+  rewrite addr0.
+  rewrite (mulrC 1%R (a_cost _)).
+  rewrite -mulrA  mulrC divff.
+    by rewrite mulrC mulr1.
+    by rewrite oner_neq0.
+  Qed.
+
+
+  (** Cost and expectedCondCost of dirac distribution are equal *)
+  Lemma prod_ddist_eccost_eq_cost:
+    forall (st : state N T) (i : 'I_N),
+    expectedCondCost i
+           (prod_dist [ffun x => diracDist st x]) (st i)
+    =
+    cost i st.
+  Proof.
+  move=>st i.
+  rewrite /expectedCondCost /expectedCondValue.
+    by rewrite _prod_ddist_cost_eqcost.
+  Qed.
+
+
+  (** Cost of updated state and expectedUnilateralCondCost of Dirac
+      distribution are equal *)
+  Lemma prod_ddist_euccost_eq_costupd:
+    forall (st : state N T) (i : 'I_N) (t_i' : T),
+    (expectedUnilateralCondCost i
+            (prod_dist [ffun x => diracDist st x]) (st i) t_i' + 0
+    = cost i (((upd i) st) t_i') )%R.
+  Proof.
+  move=>st i t_i'.
+  rewrite /expectedUnilateralCondCost /expectedCondValue.
+  rewrite _prod_ddist_cost_eqcost.
+    by rewrite addr0.
+  Qed.
+
+
+  (** Sub-proof for :
+      - expectedCondCost_eq0
+      - expectedUnilateralCondCost_eq0 *)
+  (* Remark: provable with GRing.Theory even when a_prob == 0 *)
+  Lemma _prod_ddist_cost_eq0:
+    forall (st : state N T) (i : 'I_N) (t_i : T) a_cost a_prob,
+    (t_i != st i)
+    ->
+    ((\sum_(t : state N T | [pred tx | tx i == t_i] t)
+       (prod_dist [ffun x => diracDist st x]) t *
+      (a_cost t)) / a_prob)%R
+    =
+    0%R.
+  Proof.
+  move=> st i t_i a_cost a_prob Hti.
+  rewrite (eq_bigr (fun _ => 0%R)) => //=.
+  + by rewrite mulrC sum_pred_eq0 mulr0.
+  + move=>t Hti2.
+    move/eqP in Hti2.
+    rewrite -Hti2 in Hti.
+    rewrite /prod_pmf /prod_dist ffunE => //=.
+    rewrite exists0_prod0.
+    - by rewrite mulrC mulr0.
+    - exists i.
+      rewrite /diracDist ffunE => //=.
+        by rewrite dirac_dist_eq0R.
+  Qed.
+
+  (** The cost of (t i), t != st is equal to zero *)
+  Lemma expectedCondCost_eq0:
+    forall (st : state N T) (i : 'I_N) (t_i : T),
+    (t_i != st i)
+    ->
+    (expectedCondCost
+     i (prod_dist [ffun x => diracDist st x]) t_i = 0)%R.
+  Proof.
+  move=> st i t_i Hti.
+  rewrite /expectedCondCost /expectedCondValue.
+    by rewrite _prod_ddist_cost_eq0.
+  Qed.
+
+  Lemma expectedUnilateralCondCost_eq0:
+    forall (st : state N T) (i : 'I_N) (t_i t_i' : T),
+     (t_i != st i)
+    ->
+    (expectedUnilateralCondCost
+     i (prod_dist [ffun x => diracDist st x]) t_i t_i' = 0)%R.
+  Proof.
+  move=> st i t_i t_i' Hti.
+  rewrite /expectedUnilateralCondCost /expectedCondValue.
+    by rewrite _prod_ddist_cost_eq0.
+  Qed.
+
+
+  (** Every PNE is a MNE of a corresponding Dirac distribution *)
+  Lemma PNE_MNE:
+    forall (st: state N T),
+    PNE st -> MNE (finfun (diracDist st)).
+  Proof.
+  move=> st Hpne i t_i t_i'.
+  case (boolP (t_i == st i)) => Hti //=.
+  { move/eqP in Hti.
+    rewrite Hti.
+    move/ moves_t_eq_st.
+
+    rewrite prod_ddist_eccost_eq_cost.
+    rewrite prod_ddist_euccost_eq_costupd.
+      by apply Hpne.
+  }
+  { move=> Hforall.
+    rewrite expectedCondCost_eq0 => //=.
+    rewrite expectedUnilateralCondCost_eq0 => //=.
+      by rewrite addr0 lerr.
+  }
+  Qed.
+
+End PNE_implies_MNE.
