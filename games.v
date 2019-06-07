@@ -583,7 +583,7 @@ Section PNE_implies_MNE.
   move=> f Hexists.
   have [i Hi] := Hexists.
   rewrite (bigD1 i) => //=.
-    by rewrite Hi mul0r.
+  by rewrite Hi mul0r.
   Qed.
 
 
@@ -593,16 +593,11 @@ Section PNE_implies_MNE.
     forall (t st : state N T),
     t == st <-> (forall i : 'I_N, t i == st i).
   Proof.
-  move=>t st.
-  split; move=> Hst.
+  move=>t st; split=> Hst.
   { move/eqP/ffunP in Hst.
-    move=>i.
-      by rewrite Hst.
+    by move=> i; rewrite Hst.
   }
-  { apply/eqP/ffunP.
-    move=>i.
-    apply/eqP.
-      by rewrite Hst.
+  { by apply/eqP/ffunP=> i; apply/eqP; rewrite Hst.
   }
   Qed.
 
@@ -611,9 +606,8 @@ Section PNE_implies_MNE.
     reflect (t == st)
             [forall i : 'I_N, t i == st i].
   Proof.
-  move=>t st.
-  apply/iffP.
-  + by apply forallP.
+  move=>t st; apply/iffP.
+  + exact: forallP.
   + by rewrite -eq_stateE.
   + by rewrite -eq_stateE.
   Qed.
@@ -627,11 +621,8 @@ Section PNE_implies_MNE.
   Proof.
   move=>t st.
   split.
-  + move/negP.
-    move/eq_stateP.
-      by apply/existsP.
-  + move=> Hexi.
-      by apply/negP/eq_stateP/existsP.
+  + move/negP/eq_stateP; exact/existsP.
+  + move=> Hexi; exact/negP/eq_stateP/existsP.
   Qed.
 
 
@@ -650,9 +641,9 @@ Section PNE_implies_MNE.
     move: Ht.
     move/negP.
     apply/impliesPn.
-    apply Implies => Htx.
+    apply: Implies => Htx.
     rewrite neq_stateE.
-      by exists x.
+    by exists x.
   Qed.
 
 
@@ -668,7 +659,7 @@ Section PNE_implies_MNE.
     forall (st : state N T) (n : 'I_N),
     (dirac_dist st n) (st n) = 1%R.
   Proof.
-      by move=>st n; rewrite /dirac_dist ffunE eqxx.
+  by move=>st n; rewrite /dirac_dist ffunE eqxx.
   Qed.
 
 
@@ -678,7 +669,7 @@ Section PNE_implies_MNE.
     x != st n -> (dirac_dist st n) x = 0%R.
   Proof.
   move=>st n x IHx.
-  rewrite /dirac_dist ffunE ifN_eq; by auto.
+  by rewrite /dirac_dist ffunE ifN_eq.
   Qed.
 
 
@@ -688,10 +679,8 @@ Section PNE_implies_MNE.
   Proof.
   move=>st n.
   transitivity (\sum_(i in T | i != st n) (0:rty))%R.
-  + apply: eq_bigr.
-      by apply: dirac_dist_eq0R.
-  + rewrite big_const iter_add_const.
-      by rewrite mul0rn.
+  + apply: eq_bigr; exact: dirac_dist_eq0R.
+  + by rewrite big_const iter_add_const mul0rn.
   Qed.
 
 
@@ -699,16 +688,13 @@ Section PNE_implies_MNE.
   Lemma dirac_dist_axiom (st : state N T) (n : 'I_N) :
     dist_axiom (dirac_dist st n).
   Proof.
-  rewrite /dist_axiom.
-  apply/andP.
-  split.
+  rewrite /dist_axiom; apply/andP; split.
   + apply/eqP.
     rewrite (bigD1 (st n)) => //=.
-      by rewrite dirac_dist_eq1R dirac_dist_sum_eq0R addr0.
-  + apply/forallP.
-    move=> t.
+    by rewrite dirac_dist_eq1R dirac_dist_sum_eq0R addr0.
+  + apply/forallP=> t.
     rewrite /dirac_dist ffunE.
-      by case (t == st n) => //=;  rewrite ler01.
+    by case (t == st n) => //=; rewrite ler01.
   Qed.
 
 
@@ -734,21 +720,20 @@ Section PNE_implies_MNE.
       rewrite Ht (eq_big xpredT (fun _ => 1%R)) => //=.
       - by rewrite prod_eq1 ltr01.
       - move=> i Htrue.
-          by rewrite dirac_dist_eq1R.
+        by rewrite dirac_dist_eq1R.
     + move=>i Htrue.
-        by rewrite ffunE.
+      by rewrite ffunE.
   }
   { constructor.
     apply/supportP.
-    rewrite /prod_dist /prod_pmf ffunE.
-    rewrite exists0_prod0.
+    rewrite /prod_dist /prod_pmf ffunE exists0_prod0.
     + by rewrite ltrr.
     + have th: (exists i0 : 'I_N, t i0 != st i0) by rewrite -neq_stateE.
       move: th.
-      case => i Hexists //=.
+      case=> i Hexists //=.
       exists i.
       rewrite ffunE /diracDist => //=.
-        by rewrite dirac_dist_eq0R.
+      by rewrite dirac_dist_eq0R.
   }
   Qed.
 
@@ -757,10 +742,7 @@ Section PNE_implies_MNE.
     (t \in support (prod_dist [ffun x => diracDist st x]))
     <->
     (t == st).
-  Proof.
-  move=>t st.
-    by split; move/in_support_ddistP.
-  Qed.
+  Proof. by move=>t st; split; move/in_support_ddistP. Qed.
 
 
   (** A product of Dirac distributions is equal to one when evaluated
@@ -777,8 +759,7 @@ Section PNE_implies_MNE.
     + by rewrite prod_eq1.
     + by move=>i Htrue; rewrite ffunE eqxx.
   }
-  {
-      by move=>i Htrue; rewrite ffunE.
+  { by move=>i Htrue; rewrite ffunE.
   }
   Qed.
 
@@ -798,9 +779,9 @@ Section PNE_implies_MNE.
     move: th.
     case => i Hexists //=.
     exists i.
-      by rewrite dirac_dist_eq0R.
+    by rewrite dirac_dist_eq0R.
   + move=>i Htrue.
-      by rewrite ffunE.
+    by rewrite ffunE.
   Qed.
 
 
@@ -815,11 +796,10 @@ Section PNE_implies_MNE.
     (moves) i (st i) t_i'.
   Proof.
   move=> st i t_i'.
-  split.
+  split=>//.
   { move/(_ st erefl).
     rewrite in_support_ddistE eqxx; exact.
   }
-  done.
   Qed.
 
 
@@ -856,7 +836,7 @@ Section PNE_implies_MNE.
         case (boolP (t != st)) => Ht //=.
         rewrite prod_ddist_eq0.
           by rewrite mulrC mulr0.
-          by rewrite Ht.
+        by rewrite Ht.
     + by rewrite sum_pred_eq0.
   }
   rewrite th2.
@@ -867,17 +847,17 @@ Section PNE_implies_MNE.
   { rewrite /probOf.
     rewrite (bigD1 st) => //=.
     + rewrite prod_ddist_eq1 (eq_bigr (fun _ => 0%R)).
-        by rewrite sum_pred_eq0 addr0.
+      by rewrite sum_pred_eq0 addr0.
     + move=>t.
       case (t i == st i) => //= Ht.
-        by rewrite prod_ddist_eq0 => //=.
+      by rewrite prod_ddist_eq0 => //=.
   }
   rewrite th3.
   rewrite addr0.
   rewrite (mulrC 1%R (a_cost _)).
   rewrite -mulrA  mulrC divff.
     by rewrite mulrC mulr1.
-    by rewrite oner_neq0.
+  by rewrite oner_neq0.
   Qed.
 
 
@@ -889,9 +869,8 @@ Section PNE_implies_MNE.
     =
     cost i st.
   Proof.
-  move=>st i.
-  rewrite /expectedCondCost /expectedCondValue.
-    by rewrite _prod_ddist_cost_eqcost.
+  move=> st i.
+  by rewrite /expectedCondCost /expectedCondValue _prod_ddist_cost_eqcost.
   Qed.
 
 
@@ -905,8 +884,7 @@ Section PNE_implies_MNE.
   Proof.
   move=>st i t_i'.
   rewrite /expectedUnilateralCondCost /expectedCondValue.
-  rewrite _prod_ddist_cost_eqcost.
-    by rewrite addr0.
+  by rewrite _prod_ddist_cost_eqcost addr0.
   Qed.
 
 
@@ -935,7 +913,7 @@ Section PNE_implies_MNE.
     - by rewrite mulrC mulr0.
     - exists i.
       rewrite /diracDist ffunE => //=.
-        by rewrite dirac_dist_eq0R.
+      by rewrite dirac_dist_eq0R.
   Qed.
 
   (** The cost of (t i), t != st is equal to zero *)
@@ -948,7 +926,7 @@ Section PNE_implies_MNE.
   Proof.
   move=> st i t_i Hti.
   rewrite /expectedCondCost /expectedCondValue.
-    by rewrite _prod_ddist_cost_eq0.
+  by rewrite _prod_ddist_cost_eq0.
   Qed.
 
   Lemma expectedUnilateralCondCost_eq0:
@@ -960,7 +938,7 @@ Section PNE_implies_MNE.
   Proof.
   move=> st i t_i t_i' Hti.
   rewrite /expectedUnilateralCondCost /expectedCondValue.
-    by rewrite _prod_ddist_cost_eq0.
+  by rewrite _prod_ddist_cost_eq0.
   Qed.
 
 
@@ -974,15 +952,14 @@ Section PNE_implies_MNE.
   { move/eqP in Hti.
     rewrite Hti.
     move/ moves_t_eq_st.
-
     rewrite prod_ddist_eccost_eq_cost.
     rewrite prod_ddist_euccost_eq_costupd.
-      by apply Hpne.
+    exact: Hpne.
   }
   { move=> Hforall.
     rewrite expectedCondCost_eq0 => //=.
     rewrite expectedUnilateralCondCost_eq0 => //=.
-      by rewrite addr0 lerr.
+    by rewrite addr0 lerr.
   }
   Qed.
 
