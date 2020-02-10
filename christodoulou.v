@@ -304,11 +304,11 @@ Module Christodoulou.
       apply /leP.
       apply negbT in H.  rewrite -ltnNge in H.
       apply leq_case in H. destruct H.
-      have H1: (z = 2) by omega. rewrite H1 => //.
+      have H1: (z = 2) by case: H. rewrite H1 => //.
       apply leq_case in H. destruct H.
-      have H1: (z = S O) by omega. rewrite H1 => //.
+      have H1: (z = S O) by case: H. rewrite H1 => //.
       apply leq_case in H. destruct H.
-      have H1: (z = O) by omega. rewrite H1 => //.
+      have H1: (z = O) by case: H. rewrite H1 => //.
       rewrite ltn0 in H. congruence. }
     have H1: (5%:Q / 3%:Q = 2%:Q / 3%:Q + 1%:Q) by [].
     rewrite H1 -addrA [1%:~R + _] addrC addrA.

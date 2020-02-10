@@ -1,5 +1,5 @@
-dist: trusty
-sudo: required
+dist: bionic
+os: linux
 language: generic
 
 services:
@@ -7,35 +7,40 @@ services:
 
 env:
   global:
+  - NJOBS="2"
   - CONTRIB_NAME="games"
-  matrix:
+  jobs:
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.7"
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.8"
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.9"
   - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.10"
+  - COQ_IMAGE="mathcomp/mathcomp:1.9.0-coq-8.11"
+  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.7"
+  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.8"
+  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.9"
+  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.10"
+  - COQ_IMAGE="mathcomp/mathcomp:1.10.0-coq-8.11"
 
 install: |
   # Prepare the COQ container
   docker pull ${COQ_IMAGE}
   docker run -d -i --init --name=COQ -v ${TRAVIS_BUILD_DIR}:/home/coq/${CONTRIB_NAME} -w /home/coq/${CONTRIB_NAME} ${COQ_IMAGE}
   docker exec COQ /bin/bash --login -c "
-    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
-    set -ex
+    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '; set -ex
     if [ -n \"\${COMPILER_EDGE}\" ]; then opam switch \${COMPILER_EDGE}; eval \$(opam env); fi
     opam update -y
-    opam config list
-    opam repo list
-    opam list
+    opam config list; opam repo list; opam list
     " install
 
 script:
 - echo -e "${ANSI_YELLOW}Building ${CONTRIB_NAME}...${ANSI_RESET}" && echo -en 'travis_fold:start:script\\r'
 - |
   docker exec COQ /bin/bash --login -c "
-    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '
-    set -ex
+    export PS4='+ \e[33;1m(\$0 @ line \$LINENO) \$\e[0m '; set -ex
     sudo chown -R coq:coq /home/coq/${CONTRIB_NAME}
-    ( make -j \$NJOBS && make install )
+    ( make -j $NJOBS && make install )
     " script
-- docker stop COQ  # optional
 - echo -en 'travis_fold:end:script\\r'
+
+after_script:
+- docker stop COQ
