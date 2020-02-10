@@ -4,7 +4,7 @@
 # Prerequisites
 
 * `coq` `>= 8.7`
-* `coq-mathcomp-algebra` `1.9.0`
+* `coq-mathcomp-algebra` `>= 1.9.0`
 
 # Build
 
