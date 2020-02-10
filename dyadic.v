@@ -120,13 +120,13 @@ Proof.
 Qed.  
 
 Lemma Zpow_pos_div x y :
-  (y < x)%positive -> 
+  (y < x)%positive ->
   (Z.pow_pos 2 x # 1) * / (Z.pow_pos 2 y # 1) == Z.pow_pos 2 (x - y) # 1.
 Proof.
   intros H; rewrite !Z.pow_pos_fold.
   assert (Zpos (x - y) = (Zpos x - Zpos y)%Z) as ->.
   { apply Pos2Z.inj_sub; auto. }
-  rewrite Z.pow_sub_r; try omega.
+  rewrite Z.pow_sub_r; try discriminate.
   rewrite <-Z.pow_sub_r.
   { unfold Qmult, Qinv; simpl.
     assert (exists p, Z.pow_pos 2 y = Zpos p).
@@ -269,8 +269,8 @@ Proof.
       { rewrite Qmult_1_r; apply Qeq_refl. }
       rewrite Zpower_pos_nat, Zpower_nat_Z.
       unfold Qeq; simpl; rewrite Zmult_1_r; apply Z.pow_nonzero.
-      { omega. }
-      omega. }
+      { discriminate. }
+      now auto with zarith. }
     assert (inject_Z (Z.pow_pos 2 (X + Z)) * (1 / inject_Z (Z.pow_pos 2 X)) ==
             inject_Z (Z.pow_pos 2 Z)) as ->.
     { unfold Qdiv.
@@ -284,8 +284,8 @@ Proof.
         { rewrite Qmult_1_r; apply Qeq_refl. }
         unfold inject_Z; rewrite Zpower_pos_nat, Zpower_nat_Z.
         unfold Qeq; simpl; rewrite Zmult_1_r; apply Z.pow_nonzero.
-        { omega. }
-        omega. }
+        { discriminate. }
+        now auto with zarith. }
       rewrite Qmult_1_r; apply Qeq_refl. }
     unfold D_to_Q; simpl.
     rewrite <-inject_Z_mult, <-inject_Z_plus.
@@ -316,8 +316,8 @@ Proof.
       { rewrite Qmult_1_r; apply Qeq_refl. }
       rewrite Zpower_pos_nat, Zpower_nat_Z.
       unfold Qeq; simpl; rewrite Zmult_1_r; apply Z.pow_nonzero.
-      { omega. }
-      omega. }
+      { discriminate. }
+      now auto with zarith. }
     assert (inject_Z (Z.pow_pos 2 (X + Z)) * (1 / inject_Z (Z.pow_pos 2 Z)) ==
             inject_Z (Z.pow_pos 2 X)) as ->.
     { unfold Qdiv.
@@ -330,8 +330,8 @@ Proof.
         { rewrite Qmult_1_r; apply Qeq_refl. }
         unfold inject_Z; rewrite Zpower_pos_nat, Zpower_nat_Z.
         unfold Qeq; simpl; rewrite Zmult_1_r; apply Z.pow_nonzero.
-        { omega. }
-        omega. }
+        { discriminate. }
+        now auto with zarith. }
       rewrite Qmult_1_r; apply Qeq_refl. }
     unfold D_to_Q; simpl.
     rewrite <-inject_Z_mult, <-inject_Z_plus.
@@ -520,7 +520,7 @@ Proof.
   rewrite Zmult_comm.
   rewrite (Pos2Z.inj_xO y).
   apply Zmult_le_compat_l; auto.
-  omega.
+  now auto with zarith.
 Qed.
 
 Lemma two_power_pos_le x y :
@@ -535,36 +535,30 @@ Proof.
   generalize (Pos.to_nat y) as y'; intro.
   revert y'.
   induction x'; simpl.
-  { intros y' _; induction y'; simpl; try solve[intros; omega].
+  { intros y' _; induction y'; simpl; try solve[intros; auto with zarith].
     rewrite Pos2Z.inj_xO.
     assert ((1=1*1)%Z) as -> by (rewrite Zmult_1_r; auto).
-    apply Zmult_le_compat; try omega. }
-  induction y'; try solve[intros; omega].
+    apply Zmult_le_compat; auto with zarith. }
+  induction y'; try solve[intros; auto with zarith].
   simpl; intros H.
   rewrite Pos2Z.inj_xO.
   rewrite
     (Pos2Z.inj_xO
-       (nat_rect (fun _ : nat => positive) 1%positive 
-                 (fun _ : nat => xO) y')).  
-  apply Zmult_le_compat; try omega.
-  { apply IHx'; omega. }
-  clear - x'.
-  induction x'; try (simpl; omega).
-  simpl; rewrite Pos2Z.inj_xO.
-  assert ((0=0*0)%Z) as -> by (rewrite Zmult_0_r; auto).
-  apply Zmult_le_compat; try omega.
-Qed.  
+       (nat_rect (fun _ : nat => positive) 1%positive
+                 (fun _ : nat => xO) y')).
+  now apply Zmult_le_compat; auto with zarith.
+Qed.
 
 Lemma Zpow_pos_size_le x : (x <= Z.pow_pos 2 (Zsize x))%Z.
 Proof.
   destruct x; simpl.
   { rewrite <-two_power_pos_correct.
-    unfold two_power_pos; rewrite shift_pos_equiv; simpl; omega. }
+    now unfold two_power_pos; rewrite shift_pos_equiv; auto with zarith. }
   { generalize (Pos.lt_le_incl _ _ (Pos.size_gt p)).
     rewrite <-Pos2Z.inj_pow_pos; auto. }
   rewrite <-Pos2Z.inj_pow_pos.
   apply Zle_neg_pos.
-Qed.  
+Qed.
 
 Lemma Pos_succ_sub_1 p : (Pos.succ p - 1 = p)%positive.
 Proof.
@@ -577,8 +571,8 @@ Proof.
   apply nat_of_P_gt_Gt_compare_complement_morphism.
   rewrite !Pos2Nat.inj_succ.
   rewrite Pos2Nat.inj_1.
-  omega.
-Qed.  
+  now auto with arith.
+Qed.
 
 Lemma Pos_le_1_add_sub x : (x <= 1 + (x - 1))%positive.
 Proof.
@@ -602,8 +596,8 @@ Proof.
   { apply Nat.le_lt_trans with (m := S (Pos.iter_op Init.Nat.add p 1%nat)); auto.
     assert (H3: (1 <= Pos.iter_op Init.Nat.add p 1)%nat) by apply le_Pmult_nat.
     apply Peano.le_n_S; auto. }
-  omega.
-Qed.  
+  now apply Nat.le_ngt in H2; apply H2; constructor.
+Qed.
 
 Lemma Pos2Nat_inj_2 : Pos.to_nat 2 = 2%nat.
 Proof. unfold Pos.to_nat; simpl; auto. Qed.
@@ -642,12 +636,12 @@ Proof.
     clear - H H0.
     rewrite Pos2Nat.inj_1 in H|-*.
     rewrite Pos2Nat_inj_2 in H0.
-    omega. }
+    now apply Nat.le_antisymm; auto with arith. }
   destruct (Pos.eqb_spec x 2).
   { (*x=2*)
     subst x.
     simpl.
-    omega. }
+    now constructor. }
   assert (H3: Pos.compare_cont Eq x 2 = Gt).
   { apply nat_of_P_gt_Gt_compare_complement_morphism.
     rewrite Pos2Nat.inj_le in H, H0.
@@ -657,14 +651,14 @@ Proof.
     { intros Hx.
       rewrite <-Pos2Nat.inj_iff, Hx in n0.
       auto. }
-    omega. }
+    now auto with zarith. }
   rewrite nat_of_P_minus_morphism; auto.
   simpl.
   assert (Pos.to_nat 1 = 1%nat) as -> by auto.
   assert (Pos.to_nat 2 = 2%nat) as -> by auto.
   apply Peano.le_n_S.
   generalize (Pos.to_nat x) as m; intro.
-  induction m; try solve[omega].
+  now destruct m; auto with zarith.
 Qed.
 
 Lemma Psize_minus_aux (x y : positive) : (x <= Pos.div2 (2^y) + (x - y))%positive.
@@ -695,7 +689,7 @@ Proof.
   { rewrite Pos.sub_succ_r.
     destruct (Pos.eqb_spec (x-z) 1).
     { rewrite e; simpl.
-      rewrite Pos2Nat.inj_le, Pos2Nat.inj_1, Pos2Nat_inj_2; omega. }
+      now rewrite Pos2Nat.inj_le, Pos2Nat.inj_1, Pos2Nat_inj_2; constructor. }
     rewrite Pos.succ_pred; auto.
     apply Pos.le_refl. }
   generalize H.
@@ -726,13 +720,13 @@ Proof.
     apply nat_of_P_gt_Gt_compare_morphism in H2.
     apply H.
     rewrite Pos.compare_cont_Gt_Gt.
-    rewrite Pos2Nat.inj_ge; omega. }
+    now rewrite Pos2Nat.inj_ge; auto with zarith. }
   { unfold Pos.le, Pos.compare; simpl.
     intros H H2.
     apply H; auto. }
   intros _; apply Pos.le_1_l.
 Qed.
-  
+
 Local Open Scope D_scope.
 
 Lemma Dlub_mult_le1 d : d * Dlub d <= 1.
@@ -753,12 +747,12 @@ Proof.
   rewrite Pos2Nat.inj_add.
   destruct (Pos.ltb_spec y z) as [H|H].
   { rewrite Pos2Nat.inj_sub; auto.
-    omega. }
+    now auto with zarith. }
   assert ((z - y = 1)%positive) as ->.
   { apply Pos.sub_le; auto. }
   revert H; rewrite Pos2Nat.inj_le.
   rewrite Pos2Nat.inj_1.
-  omega.
+  now auto with zarith.
 Qed.
 
 Lemma Dlub_nonneg (d : D) :
@@ -766,11 +760,11 @@ Lemma Dlub_nonneg (d : D) :
 Proof.
   destruct d; simpl; intros H.
   unfold Dle; rewrite D_to_Q0; unfold D_to_Q; simpl.
-  unfold Qle; simpl; omega.
+  now unfold Qle; simpl; auto with zarith.
 Qed.
 
 Lemma Dlub_ok (d : D) :
-  0 <= d -> 
+  0 <= d ->
   Dle 0 (d * Dlub d) /\ Dle (d * Dlub d) 1.
 Proof.
   intros H.

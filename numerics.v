@@ -232,8 +232,10 @@ Proof.
       + rewrite /GRing.mul /=.
         case H0: ((rn + (sn * rn.+1)%Nrec)%coq_nat).
         * have ->: ((rn = 0)%N).
-          { rewrite -mulnE in H0. omega. }
-          have ->: ((sn = 0)%N).
+          { rewrite -mulnE in H0.
+            rewrite -addn1 mulnDr muln1 in H0.
+            by have /plus_is_O [-> _] := H0. }
+            have ->: ((sn = 0)%N).
           { rewrite -mulnE -addn1 in H0.
             case H1: (sn == 0%N).
             move: H1 => /eqP H1. apply H1.
@@ -329,7 +331,7 @@ Lemma Psucc_gt r s :
   (r > s)%coq_nat.
 Proof.
   rewrite /Pos.gt -SuccNat2Pos.inj_compare /gt -nat_compare_gt.
-  omega.
+  now auto with arith.
 Qed.
 
 Lemma Zneg_Zle r s :
@@ -389,7 +391,7 @@ Proof.
   { move: (Zlt_Zneg H).
     apply: Psucc_gt. }
   clear - H2.
-  apply/ltP; omega.
+  now apply/ltP; auto with arith.
 Qed.
 
 Lemma int_to_Z_le (s r : int) :
@@ -473,12 +475,12 @@ Section rat_to_Q_lemmas.
     { apply Nat2Z.is_nonneg. }
     have H2: (Z.lt (Z.neg (Pos.of_succ_nat n0)) 0).
     { apply Zlt_neg_0. }
-    omega.
+    now rewrite -H in H2; exfalso; auto with zarith.
     have H1: (Z.le 0 (Z.of_nat n0)).
     { apply Nat2Z.is_nonneg. }
     have H2: (Z.lt (Z.neg (Pos.of_succ_nat n)) 0).
     { apply Zlt_neg_0. }
-    omega.
+    now rewrite H in H2; exfalso; auto with zarith.
     inversion H. apply SuccNat2Pos.inj_iff in H1. auto.
   Qed.
 
@@ -933,9 +935,10 @@ Section Z_to_int_lemmas.
       }
       {
         apply IHn in H2.
-        rewrite -minus_Sn_m. rewrite !intS H2 addrA => //.
-        omega. omega.
-      } 
+        rewrite -minus_Sn_m; first by rewrite !intS H2 addrA.
+          by auto with zarith.
+          by auto with zarith.
+      }
       case: (Pos.compare_lt_iff q p) => H1 _.
       apply Pos.compare_gt_iff. apply H1 in H => //.
       case: (Pos.compare_lt_iff q p) => H1 H2.
@@ -963,11 +966,11 @@ Section Z_to_int_lemmas.
       {
         apply IHn in H2.
         rewrite -minus_Sn_m. rewrite !intS H2 addrA => //.
-        omega.
+        now auto with zarith.
       }
       by [].
     }
-  Qed.  
+  Qed.
 
   Lemma Z_to_int_plus (r s : Z) :
     Z_to_int (r + s) = (Z_to_int r + Z_to_int s)%R.
@@ -1035,13 +1038,13 @@ Section Z_to_int_lemmas.
     { case: s.
       { move => p H.
         move: (Pos2Z.is_pos p) => H2.
-        omega. }
+        now auto with zarith. }
       { move => p q.
         rewrite /Z.le -(Pos2Z.inj_compare q p) Pos.compare_le_iff Pos2Nat.inj_le.
         move/leP => //. }
       move => p q; move: (Zle_neg_pos p q); move/Zle_not_lt => H H2.
       have H3: Z.pos q <> Z.neg p by discriminate.
-      omega. }
+      now auto with zarith. }
     case: s => //.
     move => p q; move/Zneg_Zle'; rewrite Pos.ge_le_iff Pos2Nat.inj_le.
     move/leP => H.
@@ -1611,9 +1614,9 @@ Proof.
   rewrite nat_of_bin_succ N2Nat.inj_succ => H.
   have H2: (N.to_nat n < N.to_nat m)%N.
   { move: H; move: (N.to_nat n); move: (N.to_nat m) => x y.
-    move/ltP => H; apply/ltP; omega. }
+    by rewrite ltnS. }
   suff: (n < m)%N => //.
-  by apply: (IH _ H2).
-Qed.    
+  exact: IH _ H2.
+Qed.
 
 (** END random lemmas *)
