@@ -153,15 +153,14 @@ Qed.
 Definition state N T := ({ffun 'I_N -> T})%type.
 
 Section payoffGameDefs.
-  Context {T} {N} `(gameAxiomClassA : payoff_game T N)
-          `(gameAxiomClassB : payoff_game T N).
+  Context {T} {N} `(gameAxiomClassA : payoff_game T N).
   Definition Payoff (t : state N T) : rty := \sum_i (payoff i t).
 End payoffGameDefs.
 
 (** All equilibrium notions are parameterized by a [moves] relation
     (via the typeclass [Moveable T]). *)
 Section gameDefs.
-  Context {T} {N} `(gameAxiomClassA : game T N) `(gameAxiomClassB : game T N).
+  Context {T} {N} `(gameAxiomClassA : game T N).
 
   (** We assume there's at least one strategy vector. 
       (In fact, we assume two -- though they may equal one another. 
